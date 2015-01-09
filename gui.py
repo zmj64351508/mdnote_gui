@@ -2,6 +2,7 @@
 import sys, os
 import wx
 from wx.lib.agw import aui
+#from wx import aui
 import wx.grid
 import wx.lib.platebtn as platebtn
 from event import *
@@ -32,17 +33,16 @@ class MainWindow(wx.Frame):
 		self.CreateMenu()
 
 		# toolbar
-		self.toolbar = aui.AuiToolBar(self, -1, wx.DefaultPosition, wx.DefaultSize,
-				     agwStyle=aui.AUI_TB_DEFAULT_STYLE)
-		self.toolbar.SetToolBitmapSize(wx.Size(48, 48))
-		self.toolbar.AddSimpleTool(ID_TB_START, "START", wx.ArtProvider.GetBitmap(wx.ART_QUESTION))
-		self.toolbar.AddSimpleTool(ID_TB_STOP,  "STOP",  wx.ArtProvider.GetBitmap(wx.ART_QUESTION))
-		self.toolbar.AddSimpleTool(ID_TB_PAUSE, "PAUSE", wx.ArtProvider.GetBitmap(wx.ART_QUESTION))
-		self.toolbar.Realize()
-		self.mgr.AddPane(self.toolbar,
-				 aui.AuiPaneInfo().
-				 ToolbarPane().
-				 Top())
+		#self.toolbar = aui.AuiToolBar(self)
+		#self.toolbar.SetToolBitmapSize(wx.Size(48, 48))
+		#self.toolbar.AddSimpleTool(ID_TB_START, "START", wx.ArtProvider.GetBitmap(wx.ART_QUESTION))
+		#self.toolbar.AddSimpleTool(ID_TB_STOP,  "STOP",  wx.ArtProvider.GetBitmap(wx.ART_QUESTION))
+		#self.toolbar.AddSimpleTool(ID_TB_PAUSE, "PAUSE", wx.ArtProvider.GetBitmap(wx.ART_QUESTION))
+		#self.toolbar.Realize()
+		#self.mgr.AddPane(self.toolbar,
+		#		 aui.AuiPaneInfo().
+		#		 ToolbarPane().
+		#		 Top())
 
 		notespace_tb = NotespaceToolbar(self)
 		notespace_tb.Realize()
@@ -69,10 +69,10 @@ class MainWindow(wx.Frame):
 					FloatingSize(wx.Size(600, 200)).
 					FloatingPosition(wx.Point(200, 200)).
 					Show().
-					NotebookDockable(False).
+					#NotebookDockable(False).
 					Name("Logging").
 					Caption("Logging").
-					BestSize(-1, 200))
+					BestSize(wx.Size(-1, 200)))
 
 		self.Bind(EVT_NEW_NOTESPACE, self.OnNewNotespace)
 		# "commit" all changes made to FrameManager   
@@ -156,16 +156,26 @@ class MainWindow(wx.Frame):
 # The toolbar to input notespace path
 class NotespaceToolbar(aui.AuiToolBar):
 	def __init__(self, parent):
-		super(NotespaceToolbar, self).__init__(parent, -1, wx.DefaultPosition, wx.DefaultSize,
-				     agwStyle=aui.AUI_TB_DEFAULT_STYLE)
-		self.text = wx.TextCtrl(self, -1, globalManager.GetConfig().GetNotespacePath(), size=wx.Size(400, 32), style=wx.TE_PROCESS_ENTER)
-		self.AddControl(self.text)
-		self.button = wx.Button(self, ID_TB_NOTESPACE, label="OK", size=wx.Size(50, 32))
+		super(NotespaceToolbar, self).__init__(parent)
+		self.name1 = wx.StaticText(self, label="notespace path:")
+		self.AddControl(self.name1)
+		self.notespace = wx.TextCtrl(self, value=globalManager.GetConfig().GetNotespacePath(), size=wx.Size(400, -1), style=wx.TE_PROCESS_ENTER)
+		self.AddControl(self.notespace)
+
+		self.AddSeparator()
+
+		self.name2 = wx.StaticText(self, label="mdnote.py path:")
+		self.AddControl(self.name2)
+		self.mdnote = wx.TextCtrl(self, value=globalManager.GetConfig().GetMdnotePath(), size=wx.Size(400, -1), style=wx.TE_PROCESS_ENTER)
+		self.AddControl(self.mdnote)
+
+		self.button = wx.Button(self, ID_TB_NOTESPACE, label="Open Notespace")
 		self.AddControl(self.button)
 		self.button.Bind(wx.EVT_BUTTON, self.OnSubmit)
 
 	def OnSubmit(self, event):
-		globalManager.GetConfig().SetNotespacePath(self.text.GetValue())
+		globalManager.GetConfig().SetNotespacePath(self.notespace.GetValue())
+		globalManager.GetConfig().SetMdnotePath(self.mdnote.GetValue())
 		wx.PostEvent(self.GetParent(), NewNotespaceEvent())
 
 class App(wx.App):

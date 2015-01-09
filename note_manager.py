@@ -23,9 +23,18 @@ class MdnoteManagerBase(object):
 class NotespaceManager(MdnoteManagerBase):
 	def __init__(self):
 		super(NotespaceManager, self).__init__()
+
+		mdnote_path = globalManager.GetConfig().GetMdnotePath()
+		self.ValidMdnote(mdnote_path)
+
 		notespace_path = globalManager.GetConfig().GetNotespacePath()
 		self.ValidNotespace(notespace_path)
+
 		os.chdir(notespace_path)
+
+	def ValidMdnote(self, mdnote_path):
+		if not os.path.isfile(mdnote_path):
+			raise NotespaceError("excutable " + mdnote_path.__str__() + " not exists")
 	
 	def ValidNotespace(self, ns_path):
 		path = os.path.join(ns_path, ".mdnote/note.db")
