@@ -2,6 +2,7 @@ import os
 import subprocess
 import re
 from global_manager import globalManager
+from errors import *
 
 # managers to execute with the actual commands
 class MdnoteManagerBase(object):
@@ -22,7 +23,15 @@ class MdnoteManagerBase(object):
 class NotespaceManager(MdnoteManagerBase):
 	def __init__(self):
 		super(NotespaceManager, self).__init__()
-		os.chdir(os.path.expanduser(globalManager.GetConfig().GetNotespacePath()))
+		notespace_path = globalManager.GetConfig().GetNotespacePath()
+		self.ValidNotespace(notespace_path)
+		os.chdir(notespace_path)
+	
+	def ValidNotespace(self, ns_path):
+		path = os.path.join(ns_path, ".mdnote/note.db")
+		result = os.path.exists(path)
+		if not result:
+			raise NotespaceError(path.__str__() + " not exists")
 	
 class NoteContainerManager(MdnoteManagerBase):
 	def __init__(self):

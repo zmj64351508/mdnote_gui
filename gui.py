@@ -83,7 +83,8 @@ class MainWindow(wx.Frame):
 	def CreateNotespacePanel(self):	
 		try:
 			self.ns_mgr = NotespaceManager()
-		except Exception:
+		except Exception as e:
+			wx.LogError("Can not create notespace -- " + e.__str__())
 			return None
 
 		self.note_container = NoteConatinerPanel(self)

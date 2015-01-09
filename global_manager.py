@@ -9,8 +9,6 @@ class MdnoteConfig(object):
 	def __init__(self):
 		self.SetMdnotePath(self.mdnote_path)
 		self.SetNotespacePath(self.notespace_path)
-		if not os.path.isfile(self.mdnote_path):
-			self.mdnote_path = None
 
 	def SetNotespacePath(self, path):
 		self.notespace_path = os.path.expanduser(path)
