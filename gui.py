@@ -17,12 +17,15 @@ ID_TB_STOP = wx.NewId()
 ID_TB_PAUSE = wx.NewId()
 ID_TB_NOTESPACE = wx.NewId()
 
+ID_NEW_NOTESPACE = wx.NewId()
+
 # The main window
 class MainWindow(wx.Frame):
 	def __init__(self, parent, id=-1, title="mdnote", pos=wx.DefaultPosition,
                  size=(1280, 800), style=wx.DEFAULT_FRAME_STYLE):
 
 		wx.Frame.__init__(self, parent, id, title, pos, size, style)
+		self.ns_mgr = NotespaceManager()
 		self.note_container = None
 		self.viewer = None
 
@@ -82,7 +85,7 @@ class MainWindow(wx.Frame):
 
 	def CreateNotespacePanel(self):	
 		try:
-			self.ns_mgr = NotespaceManager()
+			self.ns_mgr.Open(globalManager.GetConfig().GetNotespacePath())
 		except Exception as e:
 			wx.LogError("Can not create notespace -- " + e.__str__())
 			return None
@@ -125,11 +128,30 @@ class MainWindow(wx.Frame):
 		# create menu
 		mb = wx.MenuBar()
 
+		# File menu
 		file_menu = wx.Menu()
+		# New sub menu
+		new_submenu = wx.Menu()
+		new_submenu.Append(ID_NEW_NOTESPACE, "&New Notespace")
+		self.Bind(wx.EVT_MENU, self.OnCreateNotespace, id=ID_NEW_NOTESPACE)
+		file_menu.AppendMenu(wx.ID_NEW, "&New", new_submenu)
+		# Exit sub menu
 		file_menu.Append(wx.ID_EXIT, "&Exit")
+		# Add to menubar
 		mb.Append(file_menu, "&File")
 
 		self.SetMenuBar(mb)
+
+	def OnCreateNotespace(self, event):
+		dlg = wx.DirDialog(self, message = "Choose a directory",
+				    defaultPath = os.getcwd())	
+
+		if dlg.ShowModal() == wx.ID_OK:
+			path = dlg.GetPath()
+			wx.LogMessage('Select path: %s\n' % path)
+			self.ns_mgr.Create(path)
+
+		dlg.Destroy()
 
 	def OnNewNotespace(self, event):
 		self.DestroyNotespacePanel()
@@ -139,16 +161,6 @@ class MainWindow(wx.Frame):
 		self.mgr.Update()
 		self.Layout()
 	
-	def CreateMenu(self):
-		# create menu
-		mb = wx.MenuBar()
-
-		file_menu = wx.Menu()
-		file_menu.Append(wx.ID_EXIT, "&Exit")
-		mb.Append(file_menu, "&File")
-
-		self.SetMenuBar(mb)
-
 	def OnNewNotespace(self, event):
 		self.DestroyNotespacePanel()
 		self.CreateNotespacePanel()
