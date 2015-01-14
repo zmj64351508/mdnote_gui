@@ -78,6 +78,7 @@ class MainWindow(wx.Frame):
 					BestSize(wx.Size(-1, 200)))
 
 		self.Bind(EVT_NEW_NOTESPACE, self.OnNewNotespace)
+		self.Bind(wx.EVT_CLOSE, self.OnClose)
 		# "commit" all changes made to FrameManager   
 		self.CreateNotespacePanel()
 		self.mgr.Update()
@@ -137,6 +138,7 @@ class MainWindow(wx.Frame):
 		file_menu.AppendMenu(wx.ID_NEW, "&New", new_submenu)
 		# Exit sub menu
 		file_menu.Append(wx.ID_EXIT, "&Exit")
+		self.Bind(wx.EVT_MENU, self.OnMenuExit, id=wx.ID_EXIT)
 		# Add to menubar
 		mb.Append(file_menu, "&File")
 
@@ -165,6 +167,13 @@ class MainWindow(wx.Frame):
 		self.DestroyNotespacePanel()
 		self.CreateNotespacePanel()
 
+	def OnClose(self, event):
+		globalManager.KillAllBgProcess()
+		event.Skip()
+
+	def OnMenuExit(self, event):
+		self.Close()
+
 # The toolbar to input notespace path
 class NotespaceToolbar(aui.AuiToolBar):
 	def __init__(self, parent):
@@ -174,12 +183,12 @@ class NotespaceToolbar(aui.AuiToolBar):
 		self.notespace = wx.TextCtrl(self, value=globalManager.GetConfig().GetNotespacePath(), size=wx.Size(400, -1), style=wx.TE_PROCESS_ENTER)
 		self.AddControl(self.notespace)
 
-		self.AddSeparator()
+		#self.AddSeparator()
 
-		self.name2 = wx.StaticText(self, label="mdnote.py path:")
-		self.AddControl(self.name2)
-		self.mdnote = wx.TextCtrl(self, value=globalManager.GetConfig().GetMdnotePath(), size=wx.Size(400, -1), style=wx.TE_PROCESS_ENTER)
-		self.AddControl(self.mdnote)
+		#self.name2 = wx.StaticText(self, label="mdnote.py path:")
+		#self.AddControl(self.name2)
+		#self.mdnote = wx.TextCtrl(self, value=globalManager.GetConfig().GetMdnotePath(), size=wx.Size(400, -1), style=wx.TE_PROCESS_ENTER)
+		#self.AddControl(self.mdnote)
 
 		self.button = wx.Button(self, ID_TB_NOTESPACE, label="Open Notespace")
 		self.AddControl(self.button)
@@ -187,7 +196,7 @@ class NotespaceToolbar(aui.AuiToolBar):
 
 	def OnSubmit(self, event):
 		globalManager.GetConfig().SetNotespacePath(self.notespace.GetValue())
-		globalManager.GetConfig().SetMdnotePath(self.mdnote.GetValue())
+		#globalManager.GetConfig().SetMdnotePath(self.mdnote.GetValue())
 		wx.PostEvent(self.GetParent(), NewNotespaceEvent())
 
 class App(wx.App):
@@ -197,6 +206,12 @@ class App(wx.App):
 		self.SetTopWindow(frame)
 		return True
 
+import signal
+def signal_handler(signal, frame):
+	globalManager.KillAllBgProcess()
+	sys.exit(0)
+
 if __name__ == "__main__":
+	signal.signal(signal.SIGINT, signal_handler)
 	app = App(0)
 	app.MainLoop()

@@ -1,11 +1,12 @@
-import os, socket
+import os, socket, sys
 import wx
 
 # This class managers all the configurations
 class MdnoteConfig(object):
-	mdnote_path = "~/Program/mdnote/cli/mdnote.py"
-	#mdnote_path = r"\\10.3.35.112\Program\mdnote\cli\mdnote.py"
-	notespace_path = "~/Program/mdnote/cli/test_dir"
+	self_path = os.path.join(os.path.abspath(os.path.join(sys.argv[0], os.path.pardir)))
+	parent_path = os.path.join(self_path, os.path.pardir)
+	mdnote_path = os.path.join(parent_path, "cli/mdnote.py")
+	notespace_path = os.path.join(parent_path, "cli/test_dir")
 	local_server_addr = ("127.0.0.1", 46000)
 	remote_server_addr = ("127.0.0.1", 46000)
 
@@ -14,16 +15,16 @@ class MdnoteConfig(object):
 		self.SetNotespacePath(self.notespace_path)
 
 	def SetNotespacePath(self, path):
-		self.notespace_path = os.path.expanduser(path)
+		self.notespace_path = os.path.abspath(os.path.expanduser(path))
 
 	def GetNotespacePath(self):
-		return os.path.expanduser(self.notespace_path)
+		return os.path.abspath(os.path.expanduser(self.notespace_path))
 
 	def SetMdnotePath(self, path):
-		self.mdnote_path = os.path.expanduser(path)
+		self.mdnote_path = os.path.abspath(os.path.expanduser(path))
 
 	def GetMdnotePath(self):
-		return os.path.expanduser(self.mdnote_path)
+		return os.path.abspath(os.path.expanduser(self.mdnote_path))
 	
 	def GetLocalServerAddr(self):
 		return self.local_server_addr
@@ -78,6 +79,7 @@ class GlobalManager(object):
 		self.config = MdnoteConfig()
 		self.local_connect = LocalConnectManager()
 		self.remote_connect = RemoteConnectManager()
+		self.bg_process = []
 
 	def GetConfig(self):
 		return self.config
@@ -93,6 +95,19 @@ class GlobalManager(object):
 
 	def GetMainWindow(self):
 		return self.main_window
+
+	def AddBgProcess(self, process):
+		self.bg_process.append(process)
+
+	def GetAllBgProcess(self):
+		return self.bg_process
+
+	def KillAllBgProcess(self):
+		print "Killing all background process"
+		for process in self.bg_process:
+			process.kill()
+			print process, "killed"
+
 # So this is a global object itself
 globalManager = GlobalManager()
 

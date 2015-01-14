@@ -19,6 +19,11 @@ class MdnoteManagerBase(object):
 		match = re.findall(r'^[^(\[A-Z.*\])].*$', output, re.M)
 		return match
 
+	def run_command_background(self, *command):
+		process = subprocess.Popen(command)
+		if process:
+			globalManager.AddBgProcess(process)
+
 	def run_sub_command(self, sub_command):
 		return self.run_command(self.mdnote + " " + sub_command)
 
@@ -58,15 +63,20 @@ class MdnoteManagerBase(object):
 			wx.LogError(e.__str__())
 			return []
 
+import time
 # managers notespace
 class NotespaceManager(MdnoteManagerBase):
 	def __init__(self):
 		super(NotespaceManager, self).__init__()
-
-	def Initialize(self):
 		mdnote_path = globalManager.GetConfig().GetMdnotePath()
 		self.ValidMdnote(mdnote_path)
+		self.run_command_background("python", mdnote_path, "server")
+		server = globalManager.local_connect.ConnectServer()
+		while not server:
+			server = globalManager.local_connect.ConnectServer()
+			time.sleep(0.25)
 
+	def Initialize(self):
 		notespace_path = globalManager.GetConfig().GetNotespacePath()
 		self.ValidNotespace(notespace_path)
 
