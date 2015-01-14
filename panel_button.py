@@ -25,6 +25,7 @@ class PanelButton(wx.Panel):
 		# parent => autual_leave
 		for child in self.GetChildren():
 			child.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouseLeaveChild)
+			child.Bind(wx.EVT_ENTER_WINDOW, self.OnMouseOver)
 		self.over_child = False
 
 		self.origin_color = self.button.GetBackgroundColour()
