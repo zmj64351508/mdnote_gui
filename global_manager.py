@@ -105,7 +105,7 @@ class GlobalManager(object):
 	def KillAllBgProcess(self):
 		print "Killing all background process"
 		for process in self.bg_process:
-			process.kill()
+			process.terminate()
 			print process, "killed"
 
 # So this is a global object itself
