@@ -131,6 +131,39 @@ class NoteManager(MdnoteManagerBase):
 		assert(container_name)
 		self.container = container_name
 
+	def GetNoteInfo(self, note_path):
+		info = {}
+		result = self.run_local_server_command("list note -d " + note_path)
+		for line in result:
+			try:
+				label, value = line.split(':')
+				if label:
+					info[label.strip()] = value.strip()
+			except:
+				pass
+		wx.LogInfo("get note info " + str(info))
+		return info
+
+	def SetCurrentNote(self, note_info):
+		if note_info is None:
+			self.path = None
+			self.tags = None
+			self.create_time = None
+			self.modify_time = None
+		else:
+			self.path = note_info["PATH"]
+			self.notebook = note_info["NOTEBOOK"]
+			self.tags = note_info["TAG"]
+			self.create_time = note_info["CREATE TIME"]
+			self.modify_time = note_info["MODIFY TIME"]
+
+	def OpenContent(self):
+		abspath = os.path.join(globalManager.GetConfig().GetNotespacePath(), self.path)
+		return open(abspath, "r")
+
+	def CloseContent(self, fd):
+		return fd.close()
+
 # All notes managers by this is in the same notebook
 class NoteManagerByNotebook(NoteManager):
 	def __init__(self, name):

@@ -61,15 +61,15 @@ class NotebookButton(PanelButton):
 	def OnClick(self, event):
 		super(NotebookButton, self).OnClick(event)
 		viewer = globalManager.GetCurrentContentViewer()
-		viewer.GetNotePanel().SetManager(NoteManagerByNotebook(self.button.GetLabel()))
-		viewer.GetNotePanel().ShowNotes()
+		viewer.SetNoteManager(NoteManagerByNotebook(self.button.GetLabel()))
+		viewer.ShowSelection()
 
 class TagButton(PanelButton):
 	def OnClick(self, event):
 		super(TagButton, self).OnClick(event)
 		viewer = globalManager.GetCurrentContentViewer()
-		viewer.GetNotePanel().SetManager(NoteManagerByTag(self.button.GetLabel()))
-		viewer.GetNotePanel().ShowNotes()
+		viewer.SetNoteManager(NoteManagerByTag(self.button.GetLabel()))
+		viewer.ShowSelection()
 
 class NotebookCollapsiblePane(NoteContainerCollapsiblePane):
 	def __init__(self, parent, button_indicator=None):

@@ -15,3 +15,13 @@ class PanelButtonEvent(wx.PyEvent):
 		wx.PyEvent.__init__(self)
 		self.SetEventType(ID_EVT_PANEL_BUTTON)
 
+ID_EVT_SHOW_NOTE = wx.NewEventType()
+EVT_SHOW_NOTE = wx.PyEventBinder(ID_EVT_SHOW_NOTE, 1)
+class ShowNoteEvent(wx.PyEvent):
+	def __init__(self, note_info):
+		wx.PyEvent.__init__(self)
+		self.SetEventType(ID_EVT_SHOW_NOTE)
+		self.note_info = note_info
+
+	def GetNoteInfo(self):
+		return self.note_info

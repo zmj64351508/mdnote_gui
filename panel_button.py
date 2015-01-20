@@ -38,6 +38,9 @@ class PanelButton(wx.Panel):
 			sizer.Add(self.image, 0, wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 10)
 		sizer.Add(self.button, 0, wx.TOP|wx.BOTTOM|wx.EXPAND, 5)
 
+	def GetLabel(self):
+		return self.button.GetLabel()
+
 	def OnClick(self, event):
 		if self.button_indicator:
 			self.button_indicator.SetCurrent(self, self.origin_color, self.indicator_color)
