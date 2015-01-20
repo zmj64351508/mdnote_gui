@@ -186,8 +186,7 @@ class NoteViewPanel(wx.TextCtrl):
 	def ShowContent(self):
 		self.Clear()
 		fd = self.note_mgr.OpenContent()
-		for line in fd:
-			self.AppendText(line)
+		self.SetValue(fd.read())
 		self.note_mgr.CloseContent(fd)
 
 
