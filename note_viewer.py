@@ -78,13 +78,20 @@ class NoteSelectPanel(ScrolledPanel):
 	def ShowSelection(self):
 		self.DestroyChildren()
 		self.sizer.Clear()
+		self.Freeze()
 		if self.note_mgr:
 			notes_path = self.note_mgr.GetAllNotesPath()
+			first_selection = None
 			for path in notes_path:
 				note_button = NoteSelectButton(self, self.note_mgr, button_indicator=self.button_indicator, label=path)
+				# Automatically select first option if it exists
+				if not first_selection:
+					first_selection = note_button
 				self.sizer.Add(note_button, 0, wx.RIGHT|wx.LEFT|wx.EXPAND, 0)
 		self.FitInside()
-		self.Layout()
+		first_selection.Select()
+		self.Thaw()
+		#self.Layout()
 
 class NotePanel(wx.Panel):
 	def __init__(self, parent, mgr=None):

@@ -41,6 +41,9 @@ class PanelButton(wx.Panel):
 	def GetLabel(self):
 		return self.button.GetLabel()
 
+	def Select(self):
+		self.OnClick(None)
+
 	def OnClick(self, event):
 		if self.button_indicator:
 			self.button_indicator.SetCurrent(self, self.origin_color, self.indicator_color)
