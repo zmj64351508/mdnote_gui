@@ -74,12 +74,13 @@ class RemoteConnectManager(ConnectManager):
 
 # This class managers all global objects
 class GlobalManager(object):
-	current_content_viewer = None
 	def __init__(self):
 		self.config = MdnoteConfig()
 		self.local_connect = LocalConnectManager()
 		self.remote_connect = RemoteConnectManager()
 		self.bg_process = []
+		self.app = None
+		self.current_content_viewer = None
 
 	def GetConfig(self):
 		return self.config
@@ -95,6 +96,12 @@ class GlobalManager(object):
 
 	def GetMainWindow(self):
 		return self.main_window
+
+	def SetApp(self, app):
+		self.app = app
+
+	def GetApp(self):
+		return self.app
 
 	def AddBgProcess(self, process):
 		self.bg_process.append(process)

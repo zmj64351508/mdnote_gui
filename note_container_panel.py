@@ -26,6 +26,12 @@ class NoteConatinerPanel(ScrolledPanel):
 		sizer.Add(nb_panel, 0, wx.RIGHT|wx.LEFT|wx.EXPAND, 0)
 		sizer.Add(tag_panel, 0, wx.RIGHT|wx.LEFT|wx.EXPAND, 0)
 
+		self.Bind(wx.EVT_LEFT_UP, self.OnClick)
+
+	def OnClick(self, event):
+		self.SetFocus()
+		event.Skip()
+
 from wx.lib.embeddedimage import PyEmbeddedImage
 IMG_TAG = PyEmbeddedImage(
     "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAkdJ"

@@ -78,6 +78,7 @@ class MainWindow(wx.Frame):
 					BestSize(wx.Size(-1, 200)))
 
 		self.Bind(EVT_NEW_NOTESPACE, self.OnNewNotespace)
+		self.Bind(wx.EVT_KILL_FOCUS, self.OnLoseFocus)
 		self.Bind(wx.EVT_CLOSE, self.OnClose)
 		# "commit" all changes made to FrameManager   
 		self.CreateNotespacePanel()
@@ -168,11 +169,14 @@ class MainWindow(wx.Frame):
 		self.CreateNotespacePanel()
 
 	def OnClose(self, event):
-		globalManager.KillAllBgProcess()
+		#globalManager.KillAllBgProcess()
 		event.Skip()
 
 	def OnMenuExit(self, event):
 		self.Close()
+
+	def OnLoseFocus(self, event):
+		wx.LogInfo("main windows lose focus")
 
 # The toolbar to input notespace path
 class NotespaceToolbar(aui.AuiToolBar):
@@ -203,15 +207,16 @@ class App(wx.App):
 	def OnInit(self):
 		frame = MainWindow(None, -1)
 		globalManager.SetMainWindow(frame)
+		globalManager.SetApp(self)
 		self.SetTopWindow(frame)
 		return True
 
-import signal
-def signal_handler(signal, frame):
-	globalManager.KillAllBgProcess()
-	sys.exit(0)
+#import signal
+#def signal_handler(signal, frame):
+#	globalManager.KillAllBgProcess()
+#	sys.exit(0)
 
 if __name__ == "__main__":
-	signal.signal(signal.SIGINT, signal_handler)
+	#signal.signal(signal.SIGINT, signal_handler)
 	app = App(0)
 	app.MainLoop()

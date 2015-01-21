@@ -1,4 +1,4 @@
-import os
+import os, errno
 import subprocess
 import re
 from global_manager import globalManager
@@ -70,11 +70,13 @@ class NotespaceManager(MdnoteManagerBase):
 		super(NotespaceManager, self).__init__()
 		mdnote_path = globalManager.GetConfig().GetMdnotePath()
 		self.ValidMdnote(mdnote_path)
-		self.run_command_background("python", mdnote_path, "server")
+		# try connect first if there is a server alive
 		server = globalManager.local_connect.ConnectServer()
-		while not server:
-			server = globalManager.local_connect.ConnectServer()
-			time.sleep(0.25)
+		if not server:
+			self.run_command_background("python", mdnote_path, "server", "--auto-exit")
+			while not server:
+				server = globalManager.local_connect.ConnectServer()
+				time.sleep(0.25)
 
 	def Initialize(self):
 		notespace_path = globalManager.GetConfig().GetNotespacePath()
@@ -130,6 +132,7 @@ class NoteManager(MdnoteManagerBase):
 		super(NoteManager, self).__init__()
 		assert(container_name)
 		self.container = container_name
+		self.notes = None
 
 	def GetNoteInfo(self, note_path):
 		info = {}
@@ -141,7 +144,6 @@ class NoteManager(MdnoteManagerBase):
 					info[label.strip()] = value.strip()
 			except:
 				pass
-		wx.LogInfo("get note info " + str(info))
 		return info
 
 	def SetCurrentNote(self, note_info):
@@ -152,6 +154,7 @@ class NoteManager(MdnoteManagerBase):
 			self.modify_time = None
 		else:
 			self.path = note_info["PATH"]
+			self.abspath = os.path.join(globalManager.GetConfig().GetNotespacePath(), self.path)
 			self.notebook = note_info["NOTEBOOK"]
 			self.tags = note_info["TAG"]
 			self.create_time = note_info["CREATE TIME"]
@@ -159,7 +162,22 @@ class NoteManager(MdnoteManagerBase):
 
 	def OpenContent(self):
 		abspath = os.path.join(globalManager.GetConfig().GetNotespacePath(), self.path)
-		return open(abspath, "r")
+		try:
+			flag = "r+"
+			fd = open(abspath, flag)
+		except IOError as e:
+			if e.errno == errno.EACCES:
+				wx.LogWarning("Permission denied, open \"%s\" readonly" % self.path)
+				flag = "r"
+				fd = open(abspath, flag)
+			else:
+				raise
+
+		#if not fd.encoding:
+			#fd.close()
+			#fd = open(abspath, flag, encoding="utf-8")
+
+		return fd
 
 	def CloseContent(self, fd):
 		return fd.close()

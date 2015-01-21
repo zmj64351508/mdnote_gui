@@ -72,6 +72,8 @@ class NoteSelectPanel(ScrolledPanel):
 		self.button_indicator = PanelButtonIndicator()
 		self.SetNoteManager(mgr)
 
+		self.Bind(wx.EVT_LEFT_UP, self.OnClick)
+
 	def SetNoteManager(self, mgr):
 		self.note_mgr = mgr
 
@@ -93,6 +95,10 @@ class NoteSelectPanel(ScrolledPanel):
 		self.Thaw()
 		#self.Layout()
 
+	def OnClick(self, event):
+		self.SetFocus()
+		event.Skip()
+
 class NotePanel(wx.Panel):
 	def __init__(self, parent, mgr=None):
 		super(NotePanel, self).__init__(parent)
@@ -105,10 +111,12 @@ class NotePanel(wx.Panel):
 		self.note_info_panel = NoteInfoPanel(self, mgr)
 		self.note_view_panel = NoteViewPanel(self, mgr)
 
+		self.Freeze()
 		sizer = wx.BoxSizer(wx.VERTICAL)
 		self.SetSizer(sizer)
 		sizer.Add(self.note_info_panel, 0, wx.RIGHT|wx.LEFT|wx.EXPAND, 0)
 		sizer.Add(self.note_view_panel, 1, wx.ALL|wx.EXPAND, 10)
+		self.Thaw()
 		self.SetNoteManager(mgr)
 		self.created = True
 
@@ -122,6 +130,9 @@ class NotePanel(wx.Panel):
 	def ShowNote(self, note_info):
 		if not self.created:
 			self.Create(self.note_mgr)
+		# must close it first before SetCurrentNote
+		self.note_view_panel.CloseSaveContent()
+
 		self.note_mgr.SetCurrentNote(note_info)
 		self.note_info_panel.ShowCurrentNoteInfo()
 		self.note_view_panel.ShowContent()
@@ -170,23 +181,63 @@ class NoteInfoPanel(wx.Panel):
 		self.create_time.SetLabel("create time: " + create_time)
 		self.modify_time.SetLabel("modify time: " + modify_time)
 
-class NoteViewPanel(wx.TextCtrl):
+import wx.stc
+class NoteViewPanel(wx.stc.StyledTextCtrl):
 	def __init__(self, parent, mgr=None):
-		#super(NoteViewPanel, self).__init__(parent)
-		#self.SetupScrolling()
-		super(NoteViewPanel, self).__init__(parent, style=wx.TE_MULTILINE|wx.SIMPLE_BORDER)
-		#sizer = wx.BoxSizer(wx.VERTICAL)
-		#self.SetSizer(sizer)
-		#sizer.Add(self.input_panel, 0, wx.ALL, 10)
+		super(NoteViewPanel, self).__init__(parent, style=wx.SIMPLE_BORDER)
+		self.SetWrapMode(wx.stc.STC_WRAP_CHAR)
+		self.SetMarginWidth(1, 0)
+		#self.SetMarginWidth(0, 50)
 		self.SetNoteManager(mgr)
+		self.Bind(wx.EVT_CLOSE, self.OnClose)
+		#self.fd = None
+		self.abspath = None
 
 	def SetNoteManager(self, mgr):
 		self.note_mgr = mgr
 
+	def OnClose(self, event):
+		print "note view destroy"
+		self.CloseSaveContent()
+		event.Skip()
+
+	def CloseSaveContent(self):
+		self.SaveContent()
+		self.CloseContent()
+
+	# This will directly close the content without saving it
+	def CloseContent(self):
+		self.ClearAll()
+		#if self.fd:
+		#	self.fd.close()
+		#	self.fd = None
+	
+	def SaveContent(self):
+		#if self.fd and self.IsModified():
+		if self.IsModified():
+			wx.LogInfo("content modified, saving it")
+			self.SaveFile(self.abspath)
+			#try:
+			#	self.fd.seek(0)
+			#	self.fd.truncate()
+			#	if self.fd.encoding:
+			#		content = self.GetText().encode(self.fd.encoding)
+			#	else:
+			#		content = self.GetTextUTF8()
+			#	self.fd.write(content)
+			#except Exception as e:
+			#	wx.LogError(str(e))
+			self.SetModified(False)
+
 	def ShowContent(self):
-		self.Clear()
-		fd = self.note_mgr.OpenContent()
-		self.SetValue(fd.read())
-		self.note_mgr.CloseContent(fd)
+		#self.fd = self.note_mgr.OpenContent()
+		#if self.fd.encoding:
+		#	self.SetText(self.fd.read().decode(self.fd.encoding))
+		#else:
+		#	self.SetText(self.fd.read().decode('utf8'))
+		#self.EmptyUndoBuffer()
+		self.abspath = self.note_mgr.abspath
+		self.LoadFile(self.abspath)
+		wx.LogInfo("ShowConent")
 
 

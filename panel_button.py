@@ -45,6 +45,7 @@ class PanelButton(wx.Panel):
 		self.OnClick(None)
 
 	def OnClick(self, event):
+		self.SetFocus()
 		if self.button_indicator:
 			self.button_indicator.SetCurrent(self, self.origin_color, self.indicator_color)
 		wx.PostEvent(self.GetParent(), PanelButtonEvent())
