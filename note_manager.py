@@ -126,75 +126,105 @@ class TagManager(NoteContainerManager):
 	def GetAllContentName(self):
 		return self.tags_name
 
+class Note(object):
+	def __init__(self, note_info):
+		assert(note_info)
+		self.id = None
+		self.path = note_info["PATH"]
+		self.abspath = os.path.join(globalManager.GetConfig().GetNotespacePath(), self.path)
+		self.notebook = note_info["NOTEBOOK"]
+		self.tags = note_info["TAG"]
+		self.create_time = note_info["CREATE TIME"]
+		self.modify_time = note_info["MODIFY TIME"]
+
 # NoteManager execute all commands related to target "note"
 class NoteManager(MdnoteManagerBase):
 	def __init__(self, container_name):
 		super(NoteManager, self).__init__()
 		assert(container_name)
 		self.container = container_name
-		self.notes = None
+		self.ClearNotes()
 
-	def GetNoteInfo(self, note_path):
-		info = {}
-		result = self.run_local_server_command("list note -d " + note_path)
-		for line in result:
-			try:
-				label, value = line.split(':')
-				if label:
-					info[label.strip()] = value.strip()
-			except:
-				pass
-		return info
-
-	def SetCurrentNote(self, note_info):
-		if note_info is None:
-			self.path = None
-			self.tags = None
-			self.create_time = None
-			self.modify_time = None
+	def GetNote(self, id):
+		if type(id) is int:
+			return self.notes[id]
 		else:
-			self.path = note_info["PATH"]
-			self.abspath = os.path.join(globalManager.GetConfig().GetNotespacePath(), self.path)
-			self.notebook = note_info["NOTEBOOK"]
-			self.tags = note_info["TAG"]
-			self.create_time = note_info["CREATE TIME"]
-			self.modify_time = note_info["MODIFY TIME"]
+			raise TypeError
 
-	def OpenContent(self):
-		abspath = os.path.join(globalManager.GetConfig().GetNotespacePath(), self.path)
-		try:
-			flag = "r+"
-			fd = open(abspath, flag)
-		except IOError as e:
-			if e.errno == errno.EACCES:
-				wx.LogWarning("Permission denied, open \"%s\" readonly" % self.path)
-				flag = "r"
-				fd = open(abspath, flag)
-			else:
-				raise
+	def GetOpenedNotes(self):
+		return [self.note[id] for id in self.opened_id]
 
-		#if not fd.encoding:
-			#fd.close()
-			#fd = open(abspath, flag, encoding="utf-8")
+	def Add(self, note):
+		self.notes.append(note)
+		self.notes[-1].id = len(self.notes) - 1
+		return self.notes[-1].id
 
-		return fd
+	def ClearNotes(self):
+		self.notes = []
+		self.opened_id = []
+		self.current_id = None
 
-	def CloseContent(self, fd):
-		return fd.close()
+	def SetCurrentNote(self, id):
+		if id < 0 or id >= len(self.notes):
+			wx.LogWarning("SetCurrentNote: note id is out of range, ignoring")
+			return
+		self.opened_id.append(id)
+		self.current_id = id
+
+	def GetCurrentNote(self):
+		return self.notes[self.current_id]
+
+	def OpenNote(self, id):
+		if id < 0 or id >= len(self.notes):
+			wx.LogWarning("SetCurrentNote: note id is out of range, ignoring")
+			return
+		self.opened_id.append(id)
+
+	def CloseNote(self, id):
+		if id in self.opened_id:
+			self.opened_id.remove(id)
+		if id == self.current_id:
+			self.current_id = None
+
+	def GetNotesCommand(self):
+		pass
+
+	def GetNotes(self):
+		# each record sent has format like:
+		# PATH:xxx\n
+		# TAG:xxx;xxx;\n
+		# CREATE TIME:xxx\n
+		# MODIFY TIME:xxx\n
+		# \n
+		if self.notes:
+			return self.notes
+		else:
+			result = self.GetNotesCommand()
+			info = {}
+			for line in result:
+				try:
+					label, value = line.split(':')
+					if label:
+						info[label.strip()] = value.strip()
+				except:
+					if cmp(line, " ") == 0:
+						self.Add(Note(info))
+						info = {}
+			return self.notes
 
 # All notes managers by this is in the same notebook
 class NoteManagerByNotebook(NoteManager):
 	def __init__(self, name):
 		super(NoteManagerByNotebook, self).__init__(name)
 
-	def GetAllNotesPath(self):
-		return self.run_local_server_command('list note -n "' + self.container + '"')
+	def GetNotesCommand(self):
+		return self.run_local_server_command('list note -d -n "' + self.container + '"')
 
 # All notes managers by this is in the same tag
 class NoteManagerByTag(NoteManager):
 	def __init__(self, name):
 		super(NoteManagerByTag, self).__init__(name)
 
-	def GetAllNotesPath(self):
-		return self.run_local_server_command('list note -t "' + self.container + '"')
+	def GetNotesCommand(self):
+		return self.run_local_server_command('list note -d -t "' + self.container + '"')
 
