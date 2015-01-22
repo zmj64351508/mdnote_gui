@@ -4,10 +4,11 @@ from wx.lib.agw import aui
 from wx.lib.scrolledpanel import ScrolledPanel
 from panel_button import *
 from global_manager import globalManager
+from note_manager import NotebookManager, NoteManagerByNotebook
 
 # This class generate a notebook view
 class NotebookViewer(wx.Panel):
-	def __init__(self, parent, note_mgr=None):
+	def __init__(self, parent, note_mgr=None, notebook_mgr=None):
 		super(NotebookViewer, self).__init__(parent)
 		self.aui_mgr = aui.AuiManager()
 		self.aui_mgr.SetManagedWindow(self)
@@ -34,6 +35,11 @@ class NotebookViewer(wx.Panel):
 				CloseButton(False))
 
 		self.aui_mgr.Update()
+		self.notebook_mgr = globalManager.GetNotebookManager()
+		notebook = self.notebook_mgr.GetCurrentNotebook()
+		if notebook:
+			self.SetNoteManager(NoteManagerByNotebook(notebook))
+			self.ShowSelection()
 
 	def SetNoteManager(self, mgr):
 		self.note_mgr = mgr
@@ -60,7 +66,10 @@ class NoteSelectButton(PanelButton):
 	def OnClick(self, event):
 		super(NoteSelectButton, self).OnClick(event)
 		new_event = ShowNoteEvent(self.mgr.GetNote(self.id))
-		wx.PostEvent(globalManager.GetCurrentContentViewer(), new_event)
+		handler = self
+		parent = handler.GetParent()
+		#wx.PostEvent(globalManager.GetCurrentContentViewer(), new_event)
+		wx.PostEvent(self.GetParent(), new_event)
 
 # The middle panel in notebook view to show notes name/info
 class NoteSelectPanel(ScrolledPanel):
@@ -199,7 +208,6 @@ class NoteViewPanel(wx.stc.StyledTextCtrl):
 		self.note_mgr = mgr
 
 	def OnClose(self, event):
-		print "note view destroy"
 		self.CloseSaveContent()
 		event.Skip()
 

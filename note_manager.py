@@ -112,6 +112,18 @@ class NoteContainerManager(MdnoteManagerBase):
 class NotebookManager(NoteContainerManager):
 	def __init__(self):
 		super(NotebookManager, self).__init__()
+		self.current = None
+		self.notebooks_name = None
+		self.Refresh()
+
+	def SetCurrentNotebook(self, notebook_name):
+		if notebook_name in self.notebooks_name:
+			self.current = notebook_name
+	
+	def GetCurrentNotebook(self):
+		return self.current
+
+	def Refresh(self):
 		self.notebooks_name = self.run_local_server_command("list notebook")
 
 	def GetAllContentName(self):

@@ -22,6 +22,7 @@ class ShowNoteEvent(wx.PyEvent):
 		wx.PyEvent.__init__(self)
 		self.SetEventType(ID_EVT_SHOW_NOTE)
 		self.note = note
+		self.ResumePropagation(-1)
 
 	def GetNote(self):
 		return self.note

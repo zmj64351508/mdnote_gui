@@ -78,6 +78,7 @@ class GlobalManager(object):
 		self.config = MdnoteConfig()
 		self.local_connect = LocalConnectManager()
 		self.remote_connect = RemoteConnectManager()
+		self.notebook_manager = None
 		self.bg_process = []
 		self.app = None
 		self.current_content_viewer = None
@@ -90,6 +91,12 @@ class GlobalManager(object):
 
 	def GetCurrentContentViewer(self):
 		return self.current_content_viewer
+
+	def GetNotebookManager(self):
+		from note_manager import NotebookManager
+		if not self.notebook_manager:
+			self.notebook_manager = NotebookManager()
+		return self.notebook_manager
 
 	def SetMainWindow(self, win):
 		self.main_window = win

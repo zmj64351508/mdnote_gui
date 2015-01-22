@@ -55,6 +55,9 @@ class NoteContainerCollapsiblePane(CollapsiblePane):
 		self.button_indicator = button_indicator
 		self.mgr = manager
 
+	def GetManager(self):
+		return self.mgr
+
 	def OnPaneChange(self, event):
 		super(NoteContainerCollapsiblePane, self).OnPaneChange(event)
 		# redo the layout
@@ -64,10 +67,15 @@ class NoteContainerCollapsiblePane(CollapsiblePane):
 	def CreateButton(self, parent, indicator=None, label=None):
 		return None
 
-	def ShowContent(self):
+	def ShowContent(self, select_first):
 		contents_name = self.mgr.GetAllContentName()
+		first = None
 		for name in contents_name:
 			button = self.CreateButton(self.GetPane(), indicator=self.button_indicator, label=name)
+			if not first:
+				first = button
 			self.sizer.Add(button, 0, wx.RIGHT|wx.LEFT|wx.EXPAND, 0)
 		self.Expand()
+		if select_first:
+			first.Select()
 

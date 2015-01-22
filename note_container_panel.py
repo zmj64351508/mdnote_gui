@@ -14,11 +14,11 @@ class NoteConatinerPanel(ScrolledPanel):
 
 		# Add notebook panel
 		nb_panel = NotebookCollapsiblePane(self, self.button_indicator)
-		nb_panel.ShowContent()
+		nb_panel.ShowContent(True)
 
 		# tags pane
 		tag_panel = TagCollapsiblePane(self, self.button_indicator)
-		tag_panel.ShowContent()
+		tag_panel.ShowContent(False)
 
 		# set sizer
 		sizer = wx.BoxSizer(wx.VERTICAL)
@@ -64,11 +64,17 @@ IMG_NOTEBOOK = PyEmbeddedImage(
     "fvu5cEAVgLw//noSmPin/xM0Mz0qAH4B9vTxRRZgeg8AAAAASUVORK5CYII=")
 
 class NotebookButton(PanelButton):
+	def __init__(self, parent, mgr, **kw):
+		super(NotebookButton, self).__init__(parent, **kw)
+		self.notebook_mgr = mgr
+
 	def OnClick(self, event):
 		super(NotebookButton, self).OnClick(event)
+		self.notebook_mgr.SetCurrentNotebook(self.GetLabel())
 		viewer = globalManager.GetCurrentContentViewer()
-		viewer.SetNoteManager(NoteManagerByNotebook(self.button.GetLabel()))
-		viewer.ShowSelection()
+		if viewer:
+			viewer.SetNoteManager(NoteManagerByNotebook(self.GetLabel()))
+			viewer.ShowSelection()
 
 class TagButton(PanelButton):
 	def OnClick(self, event):
@@ -79,10 +85,12 @@ class TagButton(PanelButton):
 
 class NotebookCollapsiblePane(NoteContainerCollapsiblePane):
 	def __init__(self, parent, button_indicator=None):
-		super(NotebookCollapsiblePane, self).__init__(parent, NotebookManager(), button_indicator, label="Notebook")
+		notebook_mgr = globalManager.GetNotebookManager()
+		super(NotebookCollapsiblePane, self).__init__(parent, notebook_mgr, button_indicator, label="Notebook")
+		notebook_mgr.Refresh()
 
 	def CreateButton(self, parent, indicator=None, label=None):
-		return NotebookButton(parent, button_indicator=indicator, label=label, bmp=IMG_NOTEBOOK.GetBitmap())
+		return NotebookButton(parent, self.GetManager(), button_indicator=indicator, label=label, bmp=IMG_NOTEBOOK.GetBitmap())
 
 	def GetLogoBitmap(self):
 		return IMG_NOTEBOOK.GetBitmap()
