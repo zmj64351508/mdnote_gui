@@ -197,12 +197,14 @@ import wx.stc
 class NoteViewPanel(wx.stc.StyledTextCtrl):
 	def __init__(self, parent, mgr=None):
 		super(NoteViewPanel, self).__init__(parent, style=wx.SIMPLE_BORDER)
+		self.encoding = "utf8"
 		self.SetWrapMode(wx.stc.STC_WRAP_CHAR)
 		self.SetMarginWidth(1, 0)
 		#self.SetMarginWidth(0, 50)
 		self.SetNoteManager(mgr)
 		self.Bind(wx.EVT_CLOSE, self.OnClose)
 		self.note = None
+		self.fd = None
 
 	def SetNoteManager(self, mgr):
 		self.note_mgr = mgr
@@ -218,6 +220,7 @@ class NoteViewPanel(wx.stc.StyledTextCtrl):
 	# This will directly close the content without saving it
 	def CloseContent(self):
 		self.ClearAll()
+		self.CloseFile()
 		if self.note:
 			self.note_mgr.CloseNote(self.note.id)
 	
@@ -232,5 +235,28 @@ class NoteViewPanel(wx.stc.StyledTextCtrl):
 		self.note = note
 		self.LoadFile(self.note.abspath)
 		wx.LogInfo("ShowConent")
+
+	# Overwrite LoadFile and SaveFile for utf8
+	def LoadFile(self, path):
+		self.fd = open(path, "r+")
+		if self.fd.encoding:
+			content = self.fd.read().decode(self.fd.encoding)
+		else:
+			content = self.fd.read().decode(self.encoding)
+		self.SetText(content)
+		self.SetModified(False)
+		self.EmptyUndoBuffer()
+
+	def SaveFile(self, path):
+		if self.fd:
+			self.fd.seek(0)
+			self.fd.write(self.GetText().encode(self.encoding))
+			self.fd.truncate()
+
+	def CloseFile(self):
+		if self.fd:
+			wx.LogInfo("CloseFile")
+			self.fd.close()
+
 
 
