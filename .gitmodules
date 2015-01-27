@@ -1,0 +1,3 @@
+[submodule "cli"]
+	path = cli
+	url = git@github.com:zmj64351508/mdnote.git

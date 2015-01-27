@@ -4,9 +4,9 @@ import wx
 # This class managers all the configurations
 class MdnoteConfig(object):
 	self_path = os.path.join(os.path.abspath(os.path.join(sys.argv[0], os.path.pardir)))
-	parent_path = os.path.join(self_path, os.path.pardir)
-	mdnote_path = os.path.join(parent_path, "cli/mdnote.py")
-	notespace_path = os.path.join(parent_path, "cli/test_dir")
+	#parent_path = os.path.join(self_path, os.path.pardir)
+	mdnote_path = os.path.join(self_path, "cli/mdnote.py")
+	notespace_path = os.path.join(self_path, "cli/test_dir")
 	local_server_addr = ("127.0.0.1", 46000)
 	remote_server_addr = ("127.0.0.1", 46000)
 
