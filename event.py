@@ -14,6 +14,7 @@ class PanelButtonEvent(wx.PyEvent):
 	def __init__(self):
 		wx.PyEvent.__init__(self)
 		self.SetEventType(ID_EVT_PANEL_BUTTON)
+		self.ResumePropagation(-1)
 
 ID_EVT_SHOW_NOTE = wx.NewEventType()
 EVT_SHOW_NOTE = wx.PyEventBinder(ID_EVT_SHOW_NOTE, 1)

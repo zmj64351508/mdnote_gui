@@ -3,8 +3,12 @@ from event import *
 
 # This is the base class for buttons of tag/notebook/note etc.
 class PanelButton(wx.Panel):
-	def __init__(self, parent, label, button_indicator=None, bmp=None):
-		wx.Panel.__init__(self, parent, wx.ID_ANY)
+	def __init__(self, parent, label="", button_indicator=None, bmp=None, 
+		     hover_color=wx.Colour(220, 220, 220),
+		     indicator_color=wx.Colour(200, 200, 250),
+		     click_color=None,
+		     **kargs):
+		wx.Panel.__init__(self, parent, wx.ID_ANY, **kargs)
 		self.button = wx.StaticText(self, label=label)
 		font = self.button.GetFont()
 		font.SetPointSize(10)
@@ -12,10 +16,16 @@ class PanelButton(wx.Panel):
 		self.button_indicator = button_indicator
 		if bmp:
 			self.image = wx.StaticBitmap(self, -1, bmp, (0, 0), (bmp.GetWidth(), bmp.GetHeight()))
-			self.image.Bind(wx.EVT_LEFT_UP, self.OnClick)
+			self.image.Bind(wx.EVT_LEFT_UP, self.__OnMouseUp)
 
-		self.Bind(wx.EVT_LEFT_UP, self.OnClick)
-		self.button.Bind(wx.EVT_LEFT_UP, self.OnClick)
+		self.Bind(wx.EVT_LEFT_DOWN, self.__OnMouseDown)
+		self.Bind(wx.EVT_LEFT_DCLICK, self.__OnMouseDown)
+		self.Bind(wx.EVT_LEFT_UP, self.__OnMouseUp)
+
+		self.button.Bind(wx.EVT_LEFT_DOWN, self.__OnMouseDown)
+		self.button.Bind(wx.EVT_LEFT_DCLICK, self.__OnMouseDown)
+		self.button.Bind(wx.EVT_LEFT_UP, self.__OnMouseUp)
+
 		self.Bind(wx.EVT_ENTER_WINDOW, self.OnMouseOver)
 		self.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouseLeave)
 
@@ -29,8 +39,9 @@ class PanelButton(wx.Panel):
 		self.over_child = False
 
 		self.origin_color = self.button.GetBackgroundColour()
-		self.hover_color = wx.Colour(220, 220, 220)
-		self.indicator_color = wx.Colour(200, 200, 250)
+		self.hover_color = hover_color
+		self.indicator_color = indicator_color
+		self.click_color = click_color
 
 		sizer = wx.BoxSizer(wx.HORIZONTAL)
 		self.SetSizer(sizer)
@@ -42,13 +53,26 @@ class PanelButton(wx.Panel):
 		return self.button.GetLabel()
 
 	def Select(self):
-		self.OnClick(None)
-
-	def OnClick(self, event):
 		self.SetFocus()
 		if self.button_indicator:
 			self.button_indicator.SetCurrent(self, self.origin_color, self.indicator_color)
-		wx.PostEvent(self.GetParent(), PanelButtonEvent())
+		else:
+			self.ClearBackground()
+			self.SetBackgroundColour(self.hover_color)
+			self.Refresh()
+		wx.PostEvent(self, PanelButtonEvent())
+
+	def __OnMouseDown(self, event):
+		wx.LogInfo('Mouse Down')
+		if self.click_color:
+			self.ClearBackground()
+			self.SetBackgroundColour(self.click_color)
+			self.Refresh()
+
+	def __OnMouseUp(self, event):
+		if not self.MouseInButtonArea():
+			return
+		self.Select()
 
 	def OnMouseOver(self, event):
 		if not self.button_indicator or self.button_indicator.GetCurrent() != self:
@@ -57,9 +81,10 @@ class PanelButton(wx.Panel):
 			self.Refresh()
 
 	def MouseInButtonArea(self):
+		width, height = self.GetVirtualSize()
 		rel_pos = wx.GetMousePosition() - self.GetScreenPosition()
-		if rel_pos.x < 0 or rel_pos.x >= self.GetRect().GetWidth() or \
-		   rel_pos.y < 0 or rel_pos.y >= self.GetRect().GetHeight():
+		if rel_pos.x < 0 or rel_pos.x >= width or \
+		   rel_pos.y < 0 or rel_pos.y >= height:
 			return False
 		else:
 			return True

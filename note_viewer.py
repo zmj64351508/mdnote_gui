@@ -62,9 +62,9 @@ class NoteSelectButton(PanelButton):
 		super(NoteSelectButton, self).__init__(parent, button_indicator=button_indicator, label=label)
 		self.mgr = mgr
 		self.id = id
+		self.Bind(EVT_PANEL_BUTTON, self.OnClick)
 
 	def OnClick(self, event):
-		super(NoteSelectButton, self).OnClick(event)
 		new_event = ShowNoteEvent(self.mgr.GetNote(self.id))
 		handler = self
 		parent = handler.GetParent()

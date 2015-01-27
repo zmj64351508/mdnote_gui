@@ -67,9 +67,9 @@ class NotebookButton(PanelButton):
 	def __init__(self, parent, mgr, **kw):
 		super(NotebookButton, self).__init__(parent, **kw)
 		self.notebook_mgr = mgr
+		self.Bind(EVT_PANEL_BUTTON, self.OnClick)
 
 	def OnClick(self, event):
-		super(NotebookButton, self).OnClick(event)
 		self.notebook_mgr.SetCurrentNotebook(self.GetLabel())
 		viewer = globalManager.GetCurrentContentViewer()
 		if viewer:
@@ -77,8 +77,11 @@ class NotebookButton(PanelButton):
 			viewer.ShowSelection()
 
 class TagButton(PanelButton):
+	def __init__(self, parent, *arg, **kw):
+		super(TagButton, self).__init__(parent, *arg, **kw)
+		self.Bind(EVT_PANEL_BUTTON, self.OnClick)
+
 	def OnClick(self, event):
-		super(TagButton, self).OnClick(event)
 		viewer = globalManager.GetCurrentContentViewer()
 		viewer.SetNoteManager(NoteManagerByTag(self.button.GetLabel()))
 		viewer.ShowSelection()
