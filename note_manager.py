@@ -55,7 +55,10 @@ class MdnoteManagerBase(object):
 				output.remove(string)
 		return output
 
-	def run_local_server_command(self, server_command):
+	def run_local_server_command(self, *command_strings):
+		server_command = u"".encode("utf8")
+		for string in command_strings:
+			server_command += string.encode("utf8")
 		try:
 			server = globalManager.local_connect.GetSocket()
 			return self.run_server_command(server, server_command)
@@ -86,11 +89,11 @@ class NotespaceManager(MdnoteManagerBase):
 		os.chdir(notespace_path)
 
 	def Create(self, path):
-		self.run_local_server_command("init " + os.path.abspath(os.path.expanduser(path)))
+		self.run_local_server_command("init ", os.path.abspath(os.path.expanduser(path)))
 
 	def Open(self, path):
 		self.Initialize()
-		self.run_local_server_command("open " + os.path.abspath(os.path.expanduser(path)))
+		self.run_local_server_command("open ", os.path.abspath(os.path.expanduser(path)))
 
 	def ValidMdnote(self, mdnote_path):
 		if not os.path.isfile(mdnote_path):
@@ -143,10 +146,10 @@ class Note(object):
 	def __init__(self, note_info):
 		assert(note_info)
 		self.id = None
-		self.path = note_info["PATH"]
+		self.path = note_info["PATH"].decode("utf8").encode(sys.getfilesystemencoding())
 		self.abspath = os.path.join(globalManager.GetConfig().GetNotespacePath(), self.path)
-		self.notebook = note_info["NOTEBOOK"]
-		self.tags = note_info["TAG"]
+		self.notebook = note_info["NOTEBOOK"].decode("utf8").encode(sys.getfilesystemencoding())
+		self.tags = note_info["TAG"].decode("utf8").encode(sys.getfilesystemencoding())
 		self.create_time = note_info["CREATE TIME"]
 		self.modify_time = note_info["MODIFY TIME"]
 
@@ -172,6 +175,15 @@ class NoteManager(MdnoteManagerBase):
 		self.notes[-1].id = len(self.notes) - 1
 		return self.notes[-1].id
 
+	def ReplaceNote(self, id, note):
+		if id:
+			note.id = id
+		if note.id:
+			self.notes[id] = note
+			return True
+		else:
+			return False
+			
 	def ClearNotes(self):
 		self.notes = []
 		self.opened_id = []
@@ -202,28 +214,47 @@ class NoteManager(MdnoteManagerBase):
 	def GetNotesCommand(self):
 		pass
 
-	def GetNotes(self):
+	def ParseNoteInfo(self, to_parse):
 		# each record sent has format like:
 		# PATH:xxx\n
 		# TAG:xxx;xxx;\n
 		# CREATE TIME:xxx\n
 		# MODIFY TIME:xxx\n
-		# \n
+		#  \n
+		info = {}
+		for line in to_parse:
+			try:
+				label, value = line.split(':')
+				if label:
+					info[label.strip()] = value.strip()
+			except:
+				if cmp(line, " ") == 0:
+					yield Note(info)
+					info = {}
+
+	def RefreshOne(self, id):
+		result = self.GetOneNoteCommand(self.notes[id].path)
+		try:
+			note = self.ParseNoteInfo(result).next()
+			if note:
+				self.ReplaceNote(id, Note(info))
+			return note
+		except StopIteration:
+			return None
+
+	def RefreshAll(self):
+		self.ClearNotes()
+		result = self.GetNotesCommand()
+		for note in self.ParseNoteInfo(result):
+			self.Add(note)
+		return self.notes
+
+	def GetNotes(self):	
 		if self.notes:
 			return self.notes
 		else:
-			result = self.GetNotesCommand()
-			info = {}
-			for line in result:
-				try:
-					label, value = line.split(':')
-					if label:
-						info[label.strip()] = value.strip()
-				except:
-					if cmp(line, " ") == 0:
-						self.Add(Note(info))
-						info = {}
-			return self.notes
+			return self.RefreshAll()
+			
 
 # All notes managers by this is in the same notebook
 class NoteManagerByNotebook(NoteManager):
@@ -231,7 +262,46 @@ class NoteManagerByNotebook(NoteManager):
 		super(NoteManagerByNotebook, self).__init__(name)
 
 	def GetNotesCommand(self):
-		return self.run_local_server_command('list note -d -n "' + self.container + '"')
+		return self.run_local_server_command('list note -d -n "', self.container, '"')
+
+	def GetOneNoteCommand(self, note_path):
+		return self.run_local_server_command('list note -d "', note_path, '"')
+
+	def NewNote(self, path):
+		abs_path, rel_path = self.BuildPath(path)
+		fd = open(abs_path, "w")
+		fd.close()
+		self.run_local_server_command('add note -n "', self.container, '" "', rel_path, '"')
+		result = self.GetOneNoteCommand(rel_path)
+		try:
+			note = self.ParseNoteInfo(result).next()
+			if note:
+				self.Add(note)
+			return note
+		except StopIteration:
+			return None
+
+	# path ascii in ascii out
+	def BuildPath(self, path):
+		path = path.encode(sys.getfilesystemencoding())
+		dirname = os.path.dirname(path)
+		dirname = globalManager.MakeNoteAbsPath(dirname)
+
+		basename = os.path.basename(path)
+		name = basename.split(".")[0]
+		if len(name) != len(basename):
+			extname = basename[len(name):]
+		else:
+			extname = ""
+
+		new_path = os.path.join(dirname, basename)
+		i = 1
+		while os.path.exists(new_path):
+			new_path = os.path.join(dirname, "%s(%d)%s" % (name, i, extname))
+			i += 1
+		wx.LogInfo("New Note path is %s" % new_path)
+		return new_path.decode(sys.getfilesystemencoding()),\
+			globalManager.MakeNoteRelPath(new_path).decode(sys.getfilesystemencoding()) 
 
 # All notes managers by this is in the same tag
 class NoteManagerByTag(NoteManager):
@@ -239,5 +309,5 @@ class NoteManagerByTag(NoteManager):
 		super(NoteManagerByTag, self).__init__(name)
 
 	def GetNotesCommand(self):
-		return self.run_local_server_command('list note -d -t "' + self.container + '"')
+		return self.run_local_server_command('list note -d -t "', self.container, '"')
 

@@ -36,7 +36,6 @@ class MdnoteConfig(object):
 	def IsLogging(self):
 		return True
 
-
 class ConnectManager(object):
 	def __init__(self):
 		self.socket = None
@@ -86,6 +85,12 @@ class GlobalManager(object):
 
 	def GetConfig(self):
 		return self.config
+
+	def MakeNoteAbsPath(self, path):
+		return os.path.join(self.config.GetNotespacePath(), path)
+
+	def MakeNoteRelPath(self, path):
+		return os.path.relpath(path, self.config.GetNotespacePath())
 
 	def SetCurrentContentViewer(self, viewer):
 		self.current_content_viewer = viewer

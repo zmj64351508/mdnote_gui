@@ -28,3 +28,15 @@ class ShowNoteEvent(wx.PyEvent):
 
 	def GetNote(self):
 		return self.note
+
+ID_EVT_NEW_NOTE = wx.NewEventType()
+EVT_NEW_NOTE = wx.PyEventBinder(ID_EVT_NEW_NOTE)
+class NewNoteEvent(wx.PyEvent):
+	def __init__(self, note):
+		wx.PyEvent.__init__(self)
+		self.SetEventType(ID_EVT_NEW_NOTE)
+		self.ResumePropagation(-1)
+		self.note = note
+
+	def GetNote(self):
+		return self.note

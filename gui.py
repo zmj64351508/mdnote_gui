@@ -20,6 +20,8 @@ ID_TB_NOTESPACE = wx.NewId()
 
 ID_NEW_NOTESPACE = wx.NewId()
 
+reload(sys)
+sys.setdefaultencoding("ascii")
 # The main window
 class MainWindow(wx.Frame):
 	def __init__(self, parent, id=-1, title="mdnote", pos=wx.DefaultPosition,

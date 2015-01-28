@@ -32,7 +32,7 @@ class NotebookViewer(wx.Panel):
 				Left().
 				BestSize(wx.Size(300, 100)).
 				Floatable(False).
-				#CaptionVisible(False).
+				CaptionVisible(False).
 				CloseButton(False))
 
 		self.aui_mgr.Update()
@@ -73,9 +73,64 @@ class NoteSelectButton(PanelButton):
 		wx.PostEvent(self.GetParent(), new_event)
 
 # The middle panel in notebook view to show notes name/info
-class NoteSelectPanel(ScrolledPanel):
+class NoteSelectPanel(wx.Panel):
 	def __init__(self, parent, mgr=None):
 		super(NoteSelectPanel, self).__init__(parent)
+		self.note_mgr = mgr
+		self.sizer = wx.BoxSizer(wx.VERTICAL)
+		self.SetSizer(self.sizer)
+
+		self.toobar = NoteSelectToobar(self)
+		self.sizer.Add(self.toobar, 0, wx.ALL|wx.EXPAND, 5)
+
+		#seperator = wx.Panel(self, size=wx.Size(-1, 2))
+		#seperator.SetBackgroundColour(wx.Colour(100, 100, 100))
+		#self.sizer.Add(seperator, 0, wx.TOP|wx.BOTTOM|wx.EXPAND, 5)
+
+		self.items = NoteSelectItemPanel(self, mgr)
+		self.sizer.Add(self.items, 1, wx.LEFT|wx.RIGHT|wx.EXPAND, 0)
+
+		self.Bind(EVT_NEW_NOTE, self.OnNewNote)
+
+	def SetNoteManager(self, mgr):
+		self.note_mgr = mgr
+		self.items.SetNoteManager(mgr)
+		self.toobar.SetNoteManager(mgr)
+
+	def ShowSelection(self):
+		self.items.ShowSelection()
+		#self.Layout()
+
+	def OnNewNote(self, event):
+		note = event.GetNote()
+		self.items.ShowNewNote(note)
+
+class NoteSelectToobar(wx.Panel):
+	def __init__(self, parent, mgr=None):
+		super(NoteSelectToobar, self).__init__(parent)
+		self.note_mgr = mgr
+		self.sizer = wx.BoxSizer(wx.HORIZONTAL)
+		self.SetSizer(self.sizer)
+
+		new_notebook_tool = PanelButton(self, label="New Note", click_color=wx.Colour(100, 100, 100), style=wx.SIMPLE_BORDER)
+		new_notebook_tool.Bind(EVT_PANEL_BUTTON, self.OnNewNote)
+		self.sizer.Add(new_notebook_tool, 0, wx.TOP|wx.BOTTOM|wx.EXPAND, 0)
+
+	def SetNoteManager(self, mgr):
+		self.note_mgr = mgr
+
+	def OnNewNote(self, event):
+		dlg = wx.TextEntryDialog(self, 'Please Enter Note Name', 'Note Name')
+		if dlg.ShowModal() == wx.ID_OK:
+			note_name = dlg.GetValue()
+			note = self.note_mgr.NewNote(note_name)
+			event = NewNoteEvent(note)
+			wx.PostEvent(self.GetParent(), event)
+		dlg.Destroy()
+
+class NoteSelectItemPanel(ScrolledPanel):
+	def __init__(self, parent, mgr=None):
+		super(NoteSelectItemPanel, self).__init__(parent)
 		self.SetupScrolling()
 
 		self.sizer = wx.BoxSizer(wx.VERTICAL)
@@ -89,9 +144,9 @@ class NoteSelectPanel(ScrolledPanel):
 		self.note_mgr = mgr
 
 	def ShowSelection(self):
+		self.Freeze()
 		self.DestroyChildren()
 		self.sizer.Clear()
-		self.Freeze()
 		if self.note_mgr:
 			self.note_mgr.ClearNotes()
 			notes= self.note_mgr.GetNotes()
@@ -106,6 +161,14 @@ class NoteSelectPanel(ScrolledPanel):
 		first_selection.Select()
 		self.Thaw()
 		#self.Layout()
+
+	def ShowNewNote(self, note):
+		self.Freeze()
+		notebutton = NoteSelectButton(self, self.note_mgr, note.id, button_indicator=self.button_indicator, label=note.path)
+		self.sizer.Add(notebutton, 0, wx.RIGHT|wx.LEFT|wx.EXPAND, 0)
+		self.FitInside()
+		notebutton.Select()
+		self.Thaw()
 
 	def OnClick(self, event):
 		self.SetFocus()
@@ -239,7 +302,10 @@ class NoteViewPanel(wx.stc.StyledTextCtrl):
 
 	# Overwrite LoadFile and SaveFile for utf8
 	def LoadFile(self, path):
-		self.fd = open(path, "r+")
+		try:
+			self.fd = open(path, "r+")
+		except IOError:
+			self.fd = open(path, "r")
 		if self.fd.encoding:
 			content = self.fd.read().decode(self.fd.encoding)
 		else:
@@ -250,9 +316,12 @@ class NoteViewPanel(wx.stc.StyledTextCtrl):
 
 	def SaveFile(self, path):
 		if self.fd:
-			self.fd.seek(0)
-			self.fd.write(self.GetText().encode(self.encoding))
-			self.fd.truncate()
+			try:
+				self.fd.seek(0)
+				self.fd.write(self.GetText().encode(self.encoding))
+				self.fd.truncate()
+			except IOError:
+				pass
 
 	def CloseFile(self):
 		if self.fd:
