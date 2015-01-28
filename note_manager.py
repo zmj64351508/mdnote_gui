@@ -1,4 +1,5 @@
-import os, errno
+# -*- coding: utf-8 -*-
+import os, sys, errno
 import subprocess
 import re
 from global_manager import globalManager

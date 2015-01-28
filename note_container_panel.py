@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import wx
 from wx.lib.scrolledpanel import ScrolledPanel
 from collapsible_pane import *

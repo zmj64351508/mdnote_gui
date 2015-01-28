@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 class GuiErrorBase(Exception):
 	def __init__(self, message=""):
 		self.message = message

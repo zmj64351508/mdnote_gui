@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import wx
 from panel_button import *
 from event import *

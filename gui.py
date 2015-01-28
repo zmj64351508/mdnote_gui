@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
 import sys, os
 import wx
 from wx.lib.agw import aui
