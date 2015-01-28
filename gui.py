@@ -153,9 +153,11 @@ class MainWindow(wx.Frame):
 				    defaultPath = os.getcwd())	
 
 		if dlg.ShowModal() == wx.ID_OK:
-			path = dlg.GetPath()
+			path = dlg.GetPath().encode(sys.getfilesystemencoding())
 			wx.LogMessage('Select path: %s\n' % path)
 			self.ns_mgr.Create(path)
+			globalManager.GetConfig().SetNotespacePath(path)
+			wx.PostEvent(self, NewNotespaceEvent())
 
 		dlg.Destroy()
 

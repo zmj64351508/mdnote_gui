@@ -89,11 +89,11 @@ class NotespaceManager(MdnoteManagerBase):
 		os.chdir(notespace_path)
 
 	def Create(self, path):
-		self.run_local_server_command("init ", os.path.abspath(os.path.expanduser(path)))
+		self.run_local_server_command("init ", os.path.abspath(os.path.expanduser(path)).decode(sys.getfilesystemencoding()))
 
 	def Open(self, path):
 		self.Initialize()
-		self.run_local_server_command("open ", os.path.abspath(os.path.expanduser(path)))
+		self.run_local_server_command("open ", os.path.abspath(os.path.expanduser(path)).decode(sys.getfilesystemencoding()))
 
 	def ValidMdnote(self, mdnote_path):
 		if not os.path.isfile(mdnote_path):
