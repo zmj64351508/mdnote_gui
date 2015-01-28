@@ -17,18 +17,14 @@ class PanelButton(wx.Panel):
 		self.button_indicator = button_indicator
 		if bmp:
 			self.image = wx.StaticBitmap(self, -1, bmp, (0, 0), (bmp.GetWidth(), bmp.GetHeight()))
-			self.image.Bind(wx.EVT_LEFT_UP, self.__OnMouseUp)
 
 		self.Bind(wx.EVT_LEFT_DOWN, self.__OnMouseDown)
 		self.Bind(wx.EVT_LEFT_DCLICK, self.__OnMouseDown)
 		self.Bind(wx.EVT_LEFT_UP, self.__OnMouseUp)
 
-		self.button.Bind(wx.EVT_LEFT_DOWN, self.__OnMouseDown)
-		self.button.Bind(wx.EVT_LEFT_DCLICK, self.__OnMouseDown)
-		self.button.Bind(wx.EVT_LEFT_UP, self.__OnMouseUp)
-
 		self.Bind(wx.EVT_ENTER_WINDOW, self.OnMouseOver)
 		self.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouseLeave)
+		self.Bind(wx.EVT_KILL_FOCUS, self.OnKillFocus)
 
 		# When mouse hovers children, it will generate EVT_LEAVE_WINDOW for the parent
 		# So we need to distinguish these 2 condition:
@@ -37,6 +33,10 @@ class PanelButton(wx.Panel):
 		for child in self.GetChildren():
 			child.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouseLeaveChild)
 			child.Bind(wx.EVT_ENTER_WINDOW, self.OnMouseOver)
+			child.Bind(wx.EVT_KILL_FOCUS, self.OnKillFocus)
+			child.Bind(wx.EVT_LEFT_UP, self.__OnMouseUp)
+			child.Bind(wx.EVT_LEFT_DOWN, self.__OnMouseDown)
+			child.Bind(wx.EVT_LEFT_DCLICK, self.__OnMouseDown)
 		self.over_child = False
 
 		self.origin_color = self.button.GetBackgroundColour()
@@ -65,6 +65,7 @@ class PanelButton(wx.Panel):
 
 	def __OnMouseDown(self, event):
 		wx.LogInfo('Mouse Down')
+		self.SetFocus()
 		if self.click_color:
 			self.ClearBackground()
 			self.SetBackgroundColour(self.click_color)
@@ -74,6 +75,12 @@ class PanelButton(wx.Panel):
 		if not self.MouseInButtonArea():
 			return
 		self.Select()
+	
+	def OnKillFocus(self, event):
+		if not self.button_indicator:
+			self.ClearBackground()
+			self.SetBackgroundColour(self.origin_color)
+			self.Refresh()
 
 	def OnMouseOver(self, event):
 		if not self.button_indicator or self.button_indicator.GetCurrent() != self:
