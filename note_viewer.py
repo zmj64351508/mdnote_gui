@@ -158,7 +158,8 @@ class NoteSelectItemPanel(ScrolledPanel):
 					first_selection = note_button
 				self.sizer.Add(note_button, 0, wx.RIGHT|wx.LEFT|wx.EXPAND, 0)
 		self.FitInside()
-		first_selection.Select()
+		if first_selection:
+			first_selection.Select()
 		self.Thaw()
 		#self.Layout()
 
