@@ -223,5 +223,8 @@ class App(wx.App):
 
 if __name__ == "__main__":
 	#signal.signal(signal.SIGINT, signal_handler)
-	app = App(0)
-	app.MainLoop()
+	try:
+		app = App(0)
+		app.MainLoop()
+	finally:
+		globalManager.KillAllBgProcess()
