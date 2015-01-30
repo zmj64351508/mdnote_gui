@@ -8,14 +8,23 @@ class PanelButton(wx.Panel):
 		     hover_color=wx.Colour(220, 220, 220),
 		     indicator_color=wx.Colour(200, 200, 250),
 		     click_color=None,
+		     background_color=None,
 		     menu=None,
 		     **kargs):
 		wx.Panel.__init__(self, parent, wx.ID_ANY, **kargs)
-		self.button = wx.StaticText(self, label=label)
-		font = self.button.GetFont()
-		font.SetPointSize(10)
-		self.button.SetFont(font)
-		self.button_indicator = button_indicator
+		self.button = None
+		self.image = None
+		self.button_indicator = None
+		
+		if background_color:
+			self.SetBackgroundColour(background_color)
+
+		if label:
+			self.button = wx.StaticText(self, label=label)
+			font = self.button.GetFont()
+			font.SetPointSize(10)
+			self.button.SetFont(font)
+			self.button_indicator = button_indicator
 		if bmp:
 			self.image = wx.StaticBitmap(self, -1, bmp, (0, 0), (bmp.GetWidth(), bmp.GetHeight()))
 
@@ -42,7 +51,10 @@ class PanelButton(wx.Panel):
 			child.Bind(wx.EVT_RIGHT_UP, self.__OnRightUp)
 		self.over_child = False
 
-		self.origin_color = self.button.GetBackgroundColour()
+		if self.button:
+			self.origin_color = self.button.GetBackgroundColour()
+		else:
+			self.origin_color = self.GetBackgroundColour()
 		self.hover_color = hover_color
 		self.indicator_color = indicator_color
 		self.click_color = click_color
@@ -50,12 +62,19 @@ class PanelButton(wx.Panel):
 
 		sizer = wx.BoxSizer(wx.HORIZONTAL)
 		self.SetSizer(sizer)
-		if bmp:
+		if self.image and self.button:
 			sizer.Add(self.image, 0, wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 10)
-		sizer.Add(self.button, 0, wx.TOP|wx.BOTTOM|wx.EXPAND, 5)
+			sizer.Add(self.button, 0, wx.TOP|wx.BOTTOM|wx.EXPAND, 5)
+		elif self.button:
+			sizer.Add(self.button, 0, wx.TOP|wx.BOTTOM|wx.EXPAND, 5)
+		elif self.image:
+			sizer.Add(self.image, 1, wx.ALL, 5)
 
 	def GetLabel(self):
-		return self.button.GetLabel()
+		if self.button:
+			return self.button.GetLabel()
+		else:
+			return None
 
 	def Select(self):
 		self.SetFocus()

@@ -8,6 +8,7 @@ class MdnoteConfig(object):
 	#parent_path = os.path.join(self_path, os.path.pardir)
 	mdnote_path = os.path.join(self_path, "cli/mdnote.py")
 	notespace_path = os.path.join(self_path, "cli/test_dir")
+	res_path = os.path.join(self_path, "res")
 	core_addr = ("127.0.0.1", 46000)
 	sync_server_addr = ("127.0.0.1", 46000)
 
@@ -26,6 +27,9 @@ class MdnoteConfig(object):
 
 	def GetMdnotePath(self):
 		return os.path.abspath(os.path.expanduser(self.mdnote_path))
+
+	def GetResourcePath(self):
+		return os.path.abspath(os.path.expanduser(self.res_path))
 	
 	def GetCoreAddr(self):
 		return self.core_addr
@@ -72,6 +76,18 @@ class SyncServerConnectManager(ConnectManager):
 	def GetServerAddr(self):
 		return globalManager.GetConfig().GetSyncServerAddr()
 
+class ResourceManager(object):
+	def __init__(self, path):
+		self.path = path.encode(sys.getfilesystemencoding())
+		self.image_path = os.path.join(self.path, "image")
+
+	def GetImage(self, name):
+		try:
+			png_path = os.path.join(self.image_path, name.encode(sys.getfilesystemencoding()))
+			return wx.Image(png_path, wx.BITMAP_TYPE_ANY).ConvertToBitmap()
+		except:
+			return None
+
 # This class managers all global objects
 class GlobalManager(object):
 	def __init__(self):
@@ -82,9 +98,13 @@ class GlobalManager(object):
 		self.bg_process = []
 		self.app = None
 		self.current_content_viewer = None
+		self.resource_manager = ResourceManager(self.config.GetResourcePath())
 
 	def GetConfig(self):
 		return self.config
+
+	def GetResourceManager(self):
+		return self.resource_manager
 
 	def MakeNoteAbsPath(self, path):
 		return os.path.join(self.config.GetNotespacePath(), path)

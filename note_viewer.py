@@ -110,8 +110,8 @@ class NoteSelectPanel(wx.Panel):
 		self.sizer = wx.BoxSizer(wx.VERTICAL)
 		self.SetSizer(self.sizer)
 
-		self.toobar = NoteSelectToobar(self)
-		self.sizer.Add(self.toobar, 0, wx.ALL|wx.EXPAND, 5)
+		self.toolbar = NoteSelectToolbar(self)
+		self.sizer.Add(self.toolbar, 0, wx.ALL|wx.EXPAND, 0)
 
 		#seperator = wx.Panel(self, size=wx.Size(-1, 2))
 		#seperator.SetBackgroundColour(wx.Colour(100, 100, 100))
@@ -125,7 +125,7 @@ class NoteSelectPanel(wx.Panel):
 	def SetNoteManager(self, mgr):
 		self.note_mgr = mgr
 		self.items.SetNoteManager(mgr)
-		self.toobar.SetNoteManager(mgr)
+		self.toolbar.SetNoteManager(mgr)
 
 	def ShowSelection(self):
 		return self.items.ShowSelection()
@@ -138,16 +138,23 @@ class NoteSelectPanel(wx.Panel):
 	def DeleteNote(self, note, is_current):
 		self.items.DeleteNote(note, is_current)
 
-class NoteSelectToobar(wx.Panel):
+class NoteSelectToolbar(wx.Panel):
 	def __init__(self, parent, mgr=None):
-		super(NoteSelectToobar, self).__init__(parent)
+		super(NoteSelectToolbar, self).__init__(parent)
 		self.note_mgr = mgr
 		self.sizer = wx.BoxSizer(wx.HORIZONTAL)
 		self.SetSizer(self.sizer)
+		bg_color = wx.Colour(255, 255, 255)
+		self.SetBackgroundColour(bg_color)
 
-		new_notebook_tool = PanelButton(self, label="New Note", click_color=wx.Colour(100, 100, 100), style=wx.SIMPLE_BORDER)
+		new_notebook_tool = wx.StaticText(self, label="Select Note")
+		self.sizer.Add(new_notebook_tool, 1, wx.ALL|wx.EXPAND, 5)
+
+		new_note_image = globalManager.GetResourceManager().GetImage("new_note.png")
+		new_notebook_tool = PanelButton(self, click_color=wx.Colour(100, 100, 100), background_color=bg_color,bmp=new_note_image)
 		new_notebook_tool.Bind(EVT_PANEL_BUTTON, self.OnNewNote)
-		self.sizer.Add(new_notebook_tool, 0, wx.TOP|wx.BOTTOM|wx.EXPAND, 0)
+		self.sizer.Add(new_notebook_tool, 0, wx.RIGHT, 5)
+
 
 	def SetNoteManager(self, mgr):
 		self.note_mgr = mgr
