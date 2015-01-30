@@ -8,8 +8,8 @@ class MdnoteConfig(object):
 	#parent_path = os.path.join(self_path, os.path.pardir)
 	mdnote_path = os.path.join(self_path, "cli/mdnote.py")
 	notespace_path = os.path.join(self_path, "cli/test_dir")
-	local_server_addr = ("127.0.0.1", 46000)
-	remote_server_addr = ("127.0.0.1", 46000)
+	core_addr = ("127.0.0.1", 46000)
+	sync_server_addr = ("127.0.0.1", 46000)
 
 	def __init__(self):
 		self.SetMdnotePath(self.mdnote_path)
@@ -27,11 +27,11 @@ class MdnoteConfig(object):
 	def GetMdnotePath(self):
 		return os.path.abspath(os.path.expanduser(self.mdnote_path))
 	
-	def GetLocalServerAddr(self):
-		return self.local_server_addr
+	def GetCoreAddr(self):
+		return self.core_addr
 
-	def GetRemoteServerAddr(self):
-		return self.remote_server_addr
+	def GetSyncServerAddr(self):
+		return self.sync_server_addr
 
 	def IsLogging(self):
 		return True
@@ -64,20 +64,20 @@ class ConnectManager(object):
 			self.socket.close()
 			self.socket = None
 
-class LocalConnectManager(ConnectManager):
+class CoreConnectManager(ConnectManager):
 	def GetServerAddr(self):
-		return globalManager.GetConfig().GetLocalServerAddr()
+		return globalManager.GetConfig().GetCoreAddr()
 
-class RemoteConnectManager(ConnectManager):
+class SyncServerConnectManager(ConnectManager):
 	def GetServerAddr(self):
-		return globalManager.GetConfig().GetRemoteServerAddr()
+		return globalManager.GetConfig().GetSyncServerAddr()
 
 # This class managers all global objects
 class GlobalManager(object):
 	def __init__(self):
 		self.config = MdnoteConfig()
-		self.local_connect = LocalConnectManager()
-		self.remote_connect = RemoteConnectManager()
+		self.core_connect = CoreConnectManager()
+		self.remote_connect = SyncServerConnectManager()
 		self.notebook_manager = None
 		self.bg_process = []
 		self.app = None

@@ -9,7 +9,7 @@ import wx
 # managers to execute with the actual commands
 class MdnoteManagerBase(object):
 	def __init__(self):
-		self.server = None
+		self.core = None
 		self.mdnote = globalManager.GetConfig().GetMdnotePath()
 		if not self.mdnote:
 			raise NoSuchFile("No mdnote specified")
@@ -28,14 +28,14 @@ class MdnoteManagerBase(object):
 	def run_sub_command(self, sub_command):
 		return self.run_command(self.mdnote + " " + sub_command)
 
-	def run_server_command(self, server, server_command):
+	def __run_core_command(self, core_server, core_command):
 		retval_banner = "<return>"
 		error_banner = "<error>"
-		server.send(server_command)
+		core_server.send(core_command)
 		output = []
 		buf = ""
 		while 1:
-			data = server.recv(1024)
+			data = core_server.recv(1024)
 			buf += data
 			if not data:
 				output = buf.strip().split("\n")
@@ -47,7 +47,7 @@ class MdnoteManagerBase(object):
 				break
 		retval = last_packet.replace(retval_banner, "")
 		if cmp(retval, "None") != 0 and int(retval) != 0:
-			wx.LogError('error occur when running command "' + server_command + '"')
+			wx.LogError('error occur when running command "' + core_command + '"')
 			wx.LogError(buf)
 			return []
 		for string in output:
@@ -55,15 +55,15 @@ class MdnoteManagerBase(object):
 				output.remove(string)
 		return output
 
-	def run_local_server_command(self, *command_strings):
-		server_command = u"".encode("utf8")
+	def run_core_command(self, *command_strings):
+		core_command = u"".encode("utf8")
 		for string in command_strings:
-			server_command += string.encode("utf8")
+			core_command += string.encode("utf8")
 		try:
-			server = globalManager.local_connect.GetSocket()
-			return self.run_server_command(server, server_command)
+			core_server = globalManager.core_connect.GetSocket()
+			return self.__run_core_command(core_server, core_command)
 		except Exception as e:
-			globalManager.local_connect.DisconnectServer()
+			globalManager.core_connect.DisconnectServer()
 			wx.LogError(e.__str__())
 			return []
 
@@ -74,12 +74,12 @@ class NotespaceManager(MdnoteManagerBase):
 		super(NotespaceManager, self).__init__()
 		mdnote_path = globalManager.GetConfig().GetMdnotePath()
 		self.ValidMdnote(mdnote_path)
-		# try connect first if there is a server alive
-		server = globalManager.local_connect.ConnectServer()
-		if not server:
-			self.run_command_background("python", mdnote_path, "server", "--auto-exit")
-			while not server:
-				server = globalManager.local_connect.ConnectServer()
+		# try connect first if there is a core alive
+		core = globalManager.core_connect.ConnectServer()
+		if not core:
+			self.run_command_background("python", mdnote_path, "core", "--auto-exit")
+			while not core:
+				core = globalManager.core_connect.ConnectServer()
 				time.sleep(0.25)
 
 	def Initialize(self):
@@ -89,11 +89,11 @@ class NotespaceManager(MdnoteManagerBase):
 		os.chdir(notespace_path)
 
 	def Create(self, path):
-		self.run_local_server_command("init ", os.path.abspath(os.path.expanduser(path)).decode(sys.getfilesystemencoding()))
+		self.run_core_command("init ", os.path.abspath(os.path.expanduser(path)).decode(sys.getfilesystemencoding()))
 
 	def Open(self, path):
 		self.Initialize()
-		self.run_local_server_command("open ", os.path.abspath(os.path.expanduser(path)).decode(sys.getfilesystemencoding()))
+		self.run_core_command("open ", os.path.abspath(os.path.expanduser(path)).decode(sys.getfilesystemencoding()))
 
 	def ValidMdnote(self, mdnote_path):
 		if not os.path.isfile(mdnote_path):
@@ -128,7 +128,7 @@ class NotebookManager(NoteContainerManager):
 		return self.current
 
 	def Refresh(self):
-		self.notebooks_name = self.run_local_server_command("list notebook")
+		self.notebooks_name = self.run_core_command("list notebook")
 
 	def GetAllContentName(self):
 		return self.notebooks_name
@@ -137,7 +137,7 @@ class NotebookManager(NoteContainerManager):
 class TagManager(NoteContainerManager):
 	def __init__(self):
 		super(TagManager, self).__init__()
-		self.tags_name = self.run_local_server_command("list tag")
+		self.tags_name = self.run_core_command("list tag")
 
 	def GetAllContentName(self):
 		return self.tags_name
@@ -277,23 +277,23 @@ class NoteManagerByNotebook(NoteManager):
 		super(NoteManagerByNotebook, self).__init__(name)
 
 	def GetNotesCommand(self):
-		return self.run_local_server_command('list note -d -n "', self.container, '"')
+		return self.run_core_command('list note -d -n "', self.container, '"')
 
 	def GetOneNoteCommand(self, note_path):
-		return self.run_local_server_command('list note -d "', note_path, '"')
+		return self.run_core_command('list note -d "', note_path, '"')
 
 	def RemoveNotesCommond(self, notes_path):
 		paths = ""
 		for path in notes_path:
 			paths += ' "' + path + '" '
 		print 'rm note --purge ' + paths
-		return self.run_local_server_command('rm note --purge ' + paths)
+		return self.run_core_command('rm note --purge ' + paths)
 
 	def NewNote(self, path):
 		abs_path, rel_path = self.BuildPath(path)
 		fd = open(abs_path, "w")
 		fd.close()
-		self.run_local_server_command('add note -n "', self.container, '" "', rel_path, '"')
+		self.run_core_command('add note -n "', self.container, '" "', rel_path, '"')
 		result = self.GetOneNoteCommand(rel_path)
 		try:
 			note = self.ParseNoteInfo(result).next()
@@ -331,5 +331,5 @@ class NoteManagerByTag(NoteManager):
 		super(NoteManagerByTag, self).__init__(name)
 
 	def GetNotesCommand(self):
-		return self.run_local_server_command('list note -d -t "', self.container, '"')
+		return self.run_core_command('list note -d -t "', self.container, '"')
 
