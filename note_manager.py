@@ -171,9 +171,23 @@ class NoteManager(MdnoteManagerBase):
 		return [self.note[id] for id in self.opened_id]
 
 	def Add(self, note):
-		self.notes.append(note)
-		self.notes[-1].id = len(self.notes) - 1
-		return self.notes[-1].id
+		if len(self.removed_id) > 0:
+			id = self.removed_id.pop()
+			note.id = id
+			self.notes[id] = note
+			return note.id
+		else:
+			self.notes.append(note)
+			self.notes[-1].id = len(self.notes) - 1
+			return self.notes[-1].id
+
+	def Remove(self, ids):
+		notes_path = []
+		for id in ids:
+			notes_path.append(self.GetNote(id).path.decode(sys.getfilesystemencoding()))
+			self.removed_id.append(id)
+			wx.LogInfo("removed id %d" % id)
+		self.RemoveNotesCommond(notes_path)
 
 	def ReplaceNote(self, id, note):
 		if id:
@@ -188,6 +202,7 @@ class NoteManager(MdnoteManagerBase):
 		self.notes = []
 		self.opened_id = []
 		self.current_id = None
+		self.removed_id = []
 
 	def SetCurrentNote(self, id):
 		if id < 0 or id >= len(self.notes):
@@ -266,6 +281,13 @@ class NoteManagerByNotebook(NoteManager):
 
 	def GetOneNoteCommand(self, note_path):
 		return self.run_local_server_command('list note -d "', note_path, '"')
+
+	def RemoveNotesCommond(self, notes_path):
+		paths = ""
+		for path in notes_path:
+			paths += ' "' + path + '" '
+		print 'rm note --purge ' + paths
+		return self.run_local_server_command('rm note --purge ' + paths)
 
 	def NewNote(self, path):
 		abs_path, rel_path = self.BuildPath(path)

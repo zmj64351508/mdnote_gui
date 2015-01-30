@@ -1,42 +1,48 @@
 # -*- coding: utf-8 -*-
 import wx
 
+def NewEvent():
+	evt_id = wx.NewEventType()
+	evt = wx.PyEventBinder(evt_id)
+	return evt_id, evt
+
 # Define some events
-ID_EVT_NEW_NOTESPACE = wx.NewEventType()
-EVT_NEW_NOTESPACE = wx.PyEventBinder(ID_EVT_NEW_NOTESPACE, 1)
+ID_EVT_NEW_NOTESPACE, EVT_NEW_NOTESPACE = NewEvent()
 class NewNotespaceEvent(wx.PyEvent):
 	def __init__(self):
 		wx.PyEvent.__init__(self)
 		self.SetEventType(ID_EVT_NEW_NOTESPACE)
 
-ID_EVT_PANEL_BUTTON = wx.NewEventType()
-EVT_PANEL_BUTTON = wx.PyEventBinder(ID_EVT_PANEL_BUTTON, 1)
+ID_EVT_PANEL_BUTTON, EVT_PANEL_BUTTON = NewEvent()
 class PanelButtonEvent(wx.PyEvent):
 	def __init__(self):
 		wx.PyEvent.__init__(self)
 		self.SetEventType(ID_EVT_PANEL_BUTTON)
 		self.ResumePropagation(-1)
 
-ID_EVT_SHOW_NOTE = wx.NewEventType()
-EVT_SHOW_NOTE = wx.PyEventBinder(ID_EVT_SHOW_NOTE, 1)
-class ShowNoteEvent(wx.PyEvent):
+class NoteEvent(wx.PyEvent):
 	def __init__(self, note):
 		wx.PyEvent.__init__(self)
+		self.ResumePropagation(-1)
+		self.note = note
+
+	def GetNote(self):
+		return self.note
+
+ID_EVT_SHOW_NOTE, EVT_SHOW_NOTE = NewEvent()
+class ShowNoteEvent(NoteEvent):
+	def __init__(self, note):
+		NoteEvent.__init__(self, note)
 		self.SetEventType(ID_EVT_SHOW_NOTE)
-		self.note = note
-		self.ResumePropagation(-1)
 
-	def GetNote(self):
-		return self.note
-
-ID_EVT_NEW_NOTE = wx.NewEventType()
-EVT_NEW_NOTE = wx.PyEventBinder(ID_EVT_NEW_NOTE)
-class NewNoteEvent(wx.PyEvent):
+ID_EVT_NEW_NOTE, EVT_NEW_NOTE = NewEvent()
+class NewNoteEvent(NoteEvent):
 	def __init__(self, note):
-		wx.PyEvent.__init__(self)
+		NoteEvent.__init__(self, note)
 		self.SetEventType(ID_EVT_NEW_NOTE)
-		self.ResumePropagation(-1)
-		self.note = note
 
-	def GetNote(self):
-		return self.note
+ID_EVT_DELETE_NOTE, EVT_DELETE_NOTE = NewEvent()
+class DeleteNoteEvent(NoteEvent):
+	def __init__(self, note):
+		NoteEvent.__init__(self, note)
+		self.SetEventType(ID_EVT_DELETE_NOTE)

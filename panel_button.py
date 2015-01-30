@@ -8,6 +8,7 @@ class PanelButton(wx.Panel):
 		     hover_color=wx.Colour(220, 220, 220),
 		     indicator_color=wx.Colour(200, 200, 250),
 		     click_color=None,
+		     menu=None,
 		     **kargs):
 		wx.Panel.__init__(self, parent, wx.ID_ANY, **kargs)
 		self.button = wx.StaticText(self, label=label)
@@ -21,6 +22,7 @@ class PanelButton(wx.Panel):
 		self.Bind(wx.EVT_LEFT_DOWN, self.__OnMouseDown)
 		self.Bind(wx.EVT_LEFT_DCLICK, self.__OnMouseDown)
 		self.Bind(wx.EVT_LEFT_UP, self.__OnMouseUp)
+		self.Bind(wx.EVT_RIGHT_UP, self.__OnRightUp)
 
 		self.Bind(wx.EVT_ENTER_WINDOW, self.OnMouseOver)
 		self.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouseLeave)
@@ -37,12 +39,14 @@ class PanelButton(wx.Panel):
 			child.Bind(wx.EVT_LEFT_UP, self.__OnMouseUp)
 			child.Bind(wx.EVT_LEFT_DOWN, self.__OnMouseDown)
 			child.Bind(wx.EVT_LEFT_DCLICK, self.__OnMouseDown)
+			child.Bind(wx.EVT_RIGHT_UP, self.__OnRightUp)
 		self.over_child = False
 
 		self.origin_color = self.button.GetBackgroundColour()
 		self.hover_color = hover_color
 		self.indicator_color = indicator_color
 		self.click_color = click_color
+		self.__menu = menu
 
 		sizer = wx.BoxSizer(wx.HORIZONTAL)
 		self.SetSizer(sizer)
@@ -75,6 +79,10 @@ class PanelButton(wx.Panel):
 		if not self.MouseInButtonArea():
 			return
 		self.Select()
+
+	def __OnRightUp(self, event):
+		if self.__menu:
+			self.PopupMenu(self.__menu)	
 	
 	def OnKillFocus(self, event):
 		if not self.button_indicator:
@@ -109,6 +117,9 @@ class PanelButton(wx.Panel):
 	# So we just check the leave event like what parent do
 	def OnMouseLeaveChild(self, event):
 		self.OnMouseLeave(event)
+
+	def SetMenu(self, menu):
+		self.__menu = menu
 
 # This class help to indicate which is selected in a singel panel
 class PanelButtonIndicator(object):

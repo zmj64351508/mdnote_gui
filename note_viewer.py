@@ -62,6 +62,12 @@ class NotebookViewer(wx.Panel):
 class NoteSelectButton(PanelButton):
 	def __init__(self, parent, mgr, id, button_indicator=None, label=None):
 		super(NoteSelectButton, self).__init__(parent, button_indicator=button_indicator, label=label)
+
+		menu = wx.Menu()
+		menu.Append(ID_DELETE_NOTE, "&Delete")
+		self.Bind(wx.EVT_MENU, self.OnDelete, id=ID_DELETE_NOTE)
+		self.SetMenu(menu)
+
 		self.mgr = mgr
 		self.id = id
 		self.Bind(EVT_PANEL_BUTTON, self.OnClick)
@@ -72,6 +78,11 @@ class NoteSelectButton(PanelButton):
 		parent = handler.GetParent()
 		#wx.PostEvent(globalManager.GetCurrentContentViewer(), new_event)
 		wx.PostEvent(self.GetParent(), new_event)
+
+	def OnDelete(self, event):
+		note = self.mgr.GetNote(self.id)
+		self.mgr.Remove([self.id])
+		wx.PostEvent(self.GetParent(), DeleteNoteEvent(note))
 
 # The middle panel in notebook view to show notes name/info
 class NoteSelectPanel(wx.Panel):
@@ -92,6 +103,7 @@ class NoteSelectPanel(wx.Panel):
 		self.sizer.Add(self.items, 1, wx.LEFT|wx.RIGHT|wx.EXPAND, 0)
 
 		self.Bind(EVT_NEW_NOTE, self.OnNewNote)
+		self.Bind(EVT_DELETE_NOTE, self.OnDeleteNote)
 
 	def SetNoteManager(self, mgr):
 		self.note_mgr = mgr
@@ -105,6 +117,10 @@ class NoteSelectPanel(wx.Panel):
 	def OnNewNote(self, event):
 		note = event.GetNote()
 		self.items.ShowNewNote(note)
+
+	def OnDeleteNote(self, event):
+		note = event.GetNote()
+		self.items.DeleteNote(note)
 
 class NoteSelectToobar(wx.Panel):
 	def __init__(self, parent, mgr=None):
@@ -138,11 +154,25 @@ class NoteSelectItemPanel(ScrolledPanel):
 		self.SetSizer(self.sizer)
 		self.button_indicator = PanelButtonIndicator()
 		self.SetNoteManager(mgr)
+		self.note_items = {}
 
 		self.Bind(wx.EVT_LEFT_UP, self.OnClick)
 
 	def SetNoteManager(self, mgr):
 		self.note_mgr = mgr
+
+	def AddNoteItem(self, note):
+		note_button = NoteSelectButton(self, self.note_mgr, note.id, button_indicator=self.button_indicator, label=note.path)
+		self.note_items[note.id] = note_button
+		self.sizer.Add(note_button, 0, wx.RIGHT|wx.LEFT|wx.EXPAND, 0)
+		return note_button
+
+	def DeleteItem(self, note):
+		note_button = self.note_items.pop(note.id)
+		index = self.sizer.GetItemIndex(note_button)
+		self.sizer.Remove(note_button)
+		note_button.Destroy()
+		return index
 
 	def ShowSelection(self):
 		self.Freeze()
@@ -153,11 +183,10 @@ class NoteSelectItemPanel(ScrolledPanel):
 			notes= self.note_mgr.GetNotes()
 			first_selection = None
 			for note in notes:
-				note_button = NoteSelectButton(self, self.note_mgr, note.id, button_indicator=self.button_indicator, label=note.path)
+				note_button = self.AddNoteItem(note)
 				# Automatically select first option if it exists
 				if not first_selection:
 					first_selection = note_button
-				self.sizer.Add(note_button, 0, wx.RIGHT|wx.LEFT|wx.EXPAND, 0)
 		self.FitInside()
 		if first_selection:
 			first_selection.Select()
@@ -166,12 +195,24 @@ class NoteSelectItemPanel(ScrolledPanel):
 
 	def ShowNewNote(self, note):
 		self.Freeze()
-		notebutton = NoteSelectButton(self, self.note_mgr, note.id, button_indicator=self.button_indicator, label=note.path)
-		self.sizer.Add(notebutton, 0, wx.RIGHT|wx.LEFT|wx.EXPAND, 0)
+		notebutton = self.AddNoteItem(note)
 		self.FitInside()
 		notebutton.Select()
 		self.Thaw()
 
+	def DeleteNote(self, note):
+		self.Freeze()
+		index = self.DeleteItem(note)
+		# Select next item if is current selected
+		cur_note = self.note_mgr.GetCurrentNote()
+		if note == cur_note:
+			try:
+				self.sizer.GetItem(index).GetWindow().Select()
+			except:
+				pass
+		self.Layout()
+		self.Thaw()
+		
 	def OnClick(self, event):
 		self.SetFocus()
 		event.Skip()
