@@ -49,11 +49,11 @@ class MdnoteManagerBase(object):
 		if cmp(retval, "None") != 0 and int(retval) != 0:
 			wx.LogError('error occur when running command "' + core_command + '"')
 			wx.LogError(buf)
-			return []
+			return [], None
 		for string in output:
 			if string.find(retval_banner) == 0 or string.find(error_banner) == 0:
 				output.remove(string)
-		return output
+		return output, int(retval)
 
 	def run_core_command(self, *command_strings):
 		core_command = u"".encode("utf8")
@@ -65,7 +65,7 @@ class MdnoteManagerBase(object):
 		except Exception as e:
 			globalManager.core_connect.DisconnectServer()
 			wx.LogError(e.__str__())
-			return []
+			return [], None
 
 import time
 # managers notespace
@@ -89,11 +89,13 @@ class NotespaceManager(MdnoteManagerBase):
 		os.chdir(notespace_path)
 
 	def Create(self, path):
-		self.run_core_command("init ", os.path.abspath(os.path.expanduser(path)).decode(sys.getfilesystemencoding()))
+		value, retval = self.run_core_command("init ", os.path.abspath(os.path.expanduser(path)).decode(sys.getfilesystemencoding()))
+		return retval;
 
 	def Open(self, path):
 		self.Initialize()
-		self.run_core_command("open ", os.path.abspath(os.path.expanduser(path)).decode(sys.getfilesystemencoding()))
+		value, retval = self.run_core_command("open ", os.path.abspath(os.path.expanduser(path)).decode(sys.getfilesystemencoding()))
+		return retval
 
 	def ValidMdnote(self, mdnote_path):
 		if not os.path.isfile(mdnote_path):
@@ -128,7 +130,8 @@ class NotebookManager(NoteContainerManager):
 		return self.current
 
 	def Refresh(self):
-		self.notebooks_name = self.run_core_command("list notebook")
+		self.notebooks_name, retval = self.run_core_command("list notebook")
+		return retval
 
 	def GetAllContentName(self):
 		return self.notebooks_name
@@ -137,7 +140,7 @@ class NotebookManager(NoteContainerManager):
 class TagManager(NoteContainerManager):
 	def __init__(self):
 		super(TagManager, self).__init__()
-		self.tags_name = self.run_core_command("list tag")
+		self.tags_name, retval = self.run_core_command("list tag")
 
 	def GetAllContentName(self):
 		return self.tags_name
@@ -187,7 +190,7 @@ class NoteManager(MdnoteManagerBase):
 			notes_path.append(self.GetNote(id).path.decode(sys.getfilesystemencoding()))
 			self.removed_id.append(id)
 			wx.LogInfo("removed id %d" % id)
-		self.RemoveNotesCommond(notes_path)
+		return self.RemoveNotesCommond(notes_path)
 
 	def ReplaceNote(self, id, note):
 		if id:
@@ -277,23 +280,26 @@ class NoteManagerByNotebook(NoteManager):
 		super(NoteManagerByNotebook, self).__init__(name)
 
 	def GetNotesCommand(self):
-		return self.run_core_command('list note -d -n "', self.container, '"')
+		value, retval = self.run_core_command('list note -d -n "', self.container, '"')
+		return value
 
 	def GetOneNoteCommand(self, note_path):
-		return self.run_core_command('list note -d "', note_path, '"')
+		value, retval = self.run_core_command('list note -d "', note_path, '"')
+		return value
 
 	def RemoveNotesCommond(self, notes_path):
 		paths = ""
 		for path in notes_path:
 			paths += ' "' + path + '" '
 		print 'rm note --purge ' + paths
-		return self.run_core_command('rm note --purge ' + paths)
+		value, retval = self.run_core_command('rm note --purge ' + paths)
+		return retval
 
 	def NewNote(self, path):
 		abs_path, rel_path = self.BuildPath(path)
 		fd = open(abs_path, "w")
 		fd.close()
-		self.run_core_command('add note -n "', self.container, '" "', rel_path, '"')
+		value, retval = self.run_core_command('add note -n "', self.container, '" "', rel_path, '"')
 		result = self.GetOneNoteCommand(rel_path)
 		try:
 			note = self.ParseNoteInfo(result).next()
@@ -331,5 +337,6 @@ class NoteManagerByTag(NoteManager):
 		super(NoteManagerByTag, self).__init__(name)
 
 	def GetNotesCommand(self):
-		return self.run_core_command('list note -d -t "', self.container, '"')
+		value, retval = self.run_core_command('list note -d -t "', self.container, '"')
+		return value
 

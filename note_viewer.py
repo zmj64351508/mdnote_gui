@@ -81,8 +81,8 @@ class NoteSelectButton(PanelButton):
 
 	def OnDelete(self, event):
 		note = self.mgr.GetNote(self.id)
-		self.mgr.Remove([self.id])
-		wx.PostEvent(self.GetParent(), DeleteNoteEvent(note))
+		if self.mgr.Remove([self.id]) == 0:
+			wx.PostEvent(self.GetParent(), DeleteNoteEvent(note))
 
 # The middle panel in notebook view to show notes name/info
 class NoteSelectPanel(wx.Panel):
