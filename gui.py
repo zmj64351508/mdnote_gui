@@ -11,14 +11,13 @@ from note_viewer import NotebookViewer
 from note_container_panel import NoteConatinerPanel
 from global_manager import globalManager
 from note_manager import NotespaceManager
+from ids import *
 
 # Define some IDs
 ID_TB_START = wx.NewId()
 ID_TB_STOP = wx.NewId()
 ID_TB_PAUSE = wx.NewId()
 ID_TB_NOTESPACE = wx.NewId()
-
-ID_NEW_NOTESPACE = wx.NewId()
 
 reload(sys)
 sys.setdefaultencoding("ascii")

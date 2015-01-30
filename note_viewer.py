@@ -6,6 +6,7 @@ from wx.lib.scrolledpanel import ScrolledPanel
 from panel_button import *
 from global_manager import globalManager
 from note_manager import NotebookManager, NoteManagerByNotebook
+from ids import *
 
 # This class generate a notebook view
 class NotebookViewer(wx.Panel):
