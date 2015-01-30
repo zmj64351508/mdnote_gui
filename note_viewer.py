@@ -58,16 +58,21 @@ class NotebookViewer(wx.Panel):
 		self.note_panel.ShowNote(note)
 
 	def ShowSelection(self):
-		self.note_select_panel.ShowSelection()
+		shown_count = self.note_select_panel.ShowSelection()
+		if shown_count == 0:
+			self.note_panel.DeCreate()
 
 	def OnDeleteNote(self, event):
 		is_current = False
 		note = event.GetNote()
 		if note == self.note_mgr.GetCurrentNote() and self.note_panel:
 			is_current = True
-			self.note_panel.CloseNote(note)
+			self.note_panel.CloseNote(False)
 		if self.note_mgr.Remove([note.id]) == 0:
-			self.note_select_panel.DeleteNote(note, is_current)
+			current_show = self.note_select_panel.DeleteNote(note, is_current)
+			# no note to show
+			if current_show < 0:
+				self.note_panel.DeCreate()
 		elif self.note_panel:
 			# if we remove it failed, reopen the note for editing
 			self.note_panel.ShowNote(note)
@@ -123,7 +128,7 @@ class NoteSelectPanel(wx.Panel):
 		self.toobar.SetNoteManager(mgr)
 
 	def ShowSelection(self):
-		self.items.ShowSelection()
+		return self.items.ShowSelection()
 		#self.Layout()
 
 	def OnNewNote(self, event):
@@ -203,6 +208,7 @@ class NoteSelectItemPanel(ScrolledPanel):
 			first_selection.Select()
 		self.Thaw()
 		#self.Layout()
+		return len(notes)
 
 	def ShowNewNote(self, note):
 		self.Freeze()
@@ -211,17 +217,25 @@ class NoteSelectItemPanel(ScrolledPanel):
 		notebutton.Select()
 		self.Thaw()
 
+	# return current index of shown note in the select panel after deleted
 	def DeleteNote(self, note, is_current):
 		self.Freeze()
 		index = self.DeleteItem(note)
+		retval = index
 		# Select next item if is current selected
 		if is_current:
 			try:
 				self.sizer.GetItem(index).GetWindow().Select()
+				retval = index
 			except:
-				pass
+				try:
+					self.sizer.GetItem(index-1).GetWindow().Select()
+					retval = index - 1
+				except:
+					retval = -1
 		self.Layout()
 		self.Thaw()
+		return retval
 		
 	def OnClick(self, event):
 		self.SetFocus()
@@ -248,6 +262,15 @@ class NotePanel(wx.Panel):
 		self.SetNoteManager(mgr)
 		self.created = True
 
+	def DeCreate(self):
+		if not self.created:
+			return
+		self.Freeze()
+		self.note_info_panel.Destroy()
+		self.note_view_panel.Destroy()
+		self.created = False
+		self.Thaw()
+
 	def SetNoteManager(self, mgr):
 		self.note_mgr = mgr
 		if self.note_info_panel:
@@ -266,10 +289,12 @@ class NotePanel(wx.Panel):
 		self.note_view_panel.ShowContent(note)
 		self.Layout()
 
-	def CloseNote(self, note):
+	def CloseNote(self, destroy):
 		if not self.created:
 			return
 		self.note_view_panel.CloseSaveContent()
+		if destroy:
+			self.DeCreate()
 
 class NoteInfoPanel(wx.Panel):
 	def __init__(self, parent, mgr=None):
