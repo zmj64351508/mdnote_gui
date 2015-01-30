@@ -15,6 +15,7 @@ class NotebookViewer(wx.Panel):
 		self.aui_mgr = aui.AuiManager()
 		self.aui_mgr.SetManagedWindow(self)
 		self.Bind(EVT_SHOW_NOTE, self.OnShowNote)
+		self.Bind(EVT_DELETE_NOTE, self.OnDeleteNote)
 
 		self.note_mgr = note_mgr
 
@@ -59,6 +60,19 @@ class NotebookViewer(wx.Panel):
 	def ShowSelection(self):
 		self.note_select_panel.ShowSelection()
 
+	def OnDeleteNote(self, event):
+		is_current = False
+		note = event.GetNote()
+		if note == self.note_mgr.GetCurrentNote() and self.note_panel:
+			is_current = True
+			self.note_panel.CloseNote(note)
+		if self.note_mgr.Remove([note.id]) == 0:
+			self.note_select_panel.DeleteNote(note, is_current)
+		elif self.note_panel:
+			# if we remove it failed, reopen the note for editing
+			self.note_panel.ShowNote(note)
+
+
 class NoteSelectButton(PanelButton):
 	def __init__(self, parent, mgr, id, button_indicator=None, label=None):
 		super(NoteSelectButton, self).__init__(parent, button_indicator=button_indicator, label=label)
@@ -81,8 +95,7 @@ class NoteSelectButton(PanelButton):
 
 	def OnDelete(self, event):
 		note = self.mgr.GetNote(self.id)
-		if self.mgr.Remove([self.id]) == 0:
-			wx.PostEvent(self.GetParent(), DeleteNoteEvent(note))
+		wx.PostEvent(self.GetParent(), DeleteNoteEvent(note))
 
 # The middle panel in notebook view to show notes name/info
 class NoteSelectPanel(wx.Panel):
@@ -103,7 +116,6 @@ class NoteSelectPanel(wx.Panel):
 		self.sizer.Add(self.items, 1, wx.LEFT|wx.RIGHT|wx.EXPAND, 0)
 
 		self.Bind(EVT_NEW_NOTE, self.OnNewNote)
-		self.Bind(EVT_DELETE_NOTE, self.OnDeleteNote)
 
 	def SetNoteManager(self, mgr):
 		self.note_mgr = mgr
@@ -118,9 +130,8 @@ class NoteSelectPanel(wx.Panel):
 		note = event.GetNote()
 		self.items.ShowNewNote(note)
 
-	def OnDeleteNote(self, event):
-		note = event.GetNote()
-		self.items.DeleteNote(note)
+	def DeleteNote(self, note, is_current):
+		self.items.DeleteNote(note, is_current)
 
 class NoteSelectToobar(wx.Panel):
 	def __init__(self, parent, mgr=None):
@@ -200,12 +211,11 @@ class NoteSelectItemPanel(ScrolledPanel):
 		notebutton.Select()
 		self.Thaw()
 
-	def DeleteNote(self, note):
+	def DeleteNote(self, note, is_current):
 		self.Freeze()
 		index = self.DeleteItem(note)
 		# Select next item if is current selected
-		cur_note = self.note_mgr.GetCurrentNote()
-		if note == cur_note:
+		if is_current:
 			try:
 				self.sizer.GetItem(index).GetWindow().Select()
 			except:
@@ -255,6 +265,11 @@ class NotePanel(wx.Panel):
 		self.note_info_panel.ShowNoteInfo(note)
 		self.note_view_panel.ShowContent(note)
 		self.Layout()
+
+	def CloseNote(self, note):
+		if not self.created:
+			return
+		self.note_view_panel.CloseSaveContent()
 
 class NoteInfoPanel(wx.Panel):
 	def __init__(self, parent, mgr=None):
@@ -370,6 +385,7 @@ class NoteViewPanel(wx.stc.StyledTextCtrl):
 		if self.fd:
 			wx.LogInfo("CloseFile")
 			self.fd.close()
+			self.fd = None
 
 
 

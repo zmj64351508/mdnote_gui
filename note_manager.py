@@ -291,7 +291,6 @@ class NoteManagerByNotebook(NoteManager):
 		paths = ""
 		for path in notes_path:
 			paths += ' "' + path + '" '
-		print 'rm note --purge ' + paths
 		value, retval = self.run_core_command('rm note --purge ' + paths)
 		return retval
 
