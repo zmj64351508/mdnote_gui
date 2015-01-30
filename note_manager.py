@@ -46,7 +46,7 @@ class MdnoteManagerBase(object):
 				output = buf.strip().split("\n")
 				break
 		retval = last_packet.replace(retval_banner, "")
-		if cmp(retval, "None") != 0 and int(retval) != 0:
+		if int(retval) != 0:
 			wx.LogError('error occur when running command "' + core_command + '"')
 			wx.LogError(buf)
 			return [], None
@@ -90,7 +90,7 @@ class NotespaceManager(MdnoteManagerBase):
 
 	def Create(self, path):
 		value, retval = self.run_core_command("init ", os.path.abspath(os.path.expanduser(path)).decode(sys.getfilesystemencoding()))
-		return retval;
+		return retval
 
 	def Open(self, path):
 		self.Initialize()

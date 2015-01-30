@@ -77,6 +77,6 @@ class NoteContainerCollapsiblePane(CollapsiblePane):
 				first = button
 			self.sizer.Add(button, 0, wx.RIGHT|wx.LEFT|wx.EXPAND, 0)
 		self.Expand()
-		if select_first:
+		if select_first and first:
 			first.Select()
 

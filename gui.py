@@ -168,10 +168,6 @@ class MainWindow(wx.Frame):
 		self.mgr.Update()
 		self.Layout()
 	
-	def OnNewNotespace(self, event):
-		self.DestroyNotespacePanel()
-		self.CreateNotespacePanel()
-
 	def OnClose(self, event):
 		#globalManager.KillAllBgProcess()
 		event.Skip()
