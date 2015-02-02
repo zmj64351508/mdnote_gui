@@ -149,6 +149,9 @@ class Note(object):
 	def __init__(self, note_info):
 		assert(note_info)
 		self.id = None
+		self.SetInfo(note_info)
+
+	def SetInfo(self, note_info):
 		self.path = note_info["PATH"].decode("utf8").encode(sys.getfilesystemencoding())
 		self.abspath = os.path.join(globalManager.GetConfig().GetNotespacePath(), self.path)
 		self.notebook = note_info["NOTEBOOK"].decode("utf8").encode(sys.getfilesystemencoding())
@@ -192,6 +195,11 @@ class NoteManager(MdnoteManagerBase):
 			wx.LogInfo("removed id %d" % id)
 		return self.RemoveNotesCommond(notes_path)
 
+	def UpdateNote(self, id, info):
+		note = self.GetNote(id)
+		note.SetInfo(info)
+		return note
+
 	def ReplaceNote(self, id, note):
 		if id:
 			note.id = id
@@ -215,7 +223,10 @@ class NoteManager(MdnoteManagerBase):
 		self.current_id = id
 
 	def GetCurrentNote(self):
-		return self.notes[self.current_id]
+		if self.current_id:
+			return self.notes[self.current_id]
+		else:
+			return None
 
 	def OpenNote(self, id):
 		if id < 0 or id >= len(self.notes):
@@ -247,15 +258,16 @@ class NoteManager(MdnoteManagerBase):
 					info[label.strip()] = value.strip()
 			except:
 				if cmp(line, " ") == 0:
-					yield Note(info)
+					yield info
 					info = {}
 
 	def RefreshOne(self, id):
+		note = None
 		result = self.GetOneNoteCommand(self.notes[id].path)
 		try:
-			note = self.ParseNoteInfo(result).next()
-			if note:
-				self.ReplaceNote(id, Note(info))
+			info = self.ParseNoteInfo(result).next()
+			if info:
+				note = self.UpdateNote(id, info)
 			return note
 		except StopIteration:
 			return None
@@ -263,8 +275,8 @@ class NoteManager(MdnoteManagerBase):
 	def RefreshAll(self):
 		self.ClearNotes()
 		result = self.GetNotesCommand()
-		for note in self.ParseNoteInfo(result):
-			self.Add(note)
+		for info in self.ParseNoteInfo(result):
+			self.Add(Note(info))
 		return self.notes
 
 	def GetNotes(self):	

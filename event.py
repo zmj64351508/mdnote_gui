@@ -41,6 +41,12 @@ class NewNoteEvent(NoteEvent):
 		NoteEvent.__init__(self, note)
 		self.SetEventType(ID_EVT_NEW_NOTE)
 
+ID_EVT_UPDATE_NOTE, EVT_UPDATE_NOTE = NewEvent()
+class UpdateNoteEvent(NoteEvent):
+	def __init__(self, note):
+		NoteEvent.__init__(self, note)
+		self.SetEventType(ID_EVT_UPDATE_NOTE)
+
 ID_EVT_DELETE_NOTE, EVT_DELETE_NOTE = NewEvent()
 class DeleteNoteEvent(NoteEvent):
 	def __init__(self, note):

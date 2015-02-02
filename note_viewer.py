@@ -93,9 +93,6 @@ class NoteSelectButton(PanelButton):
 
 	def OnClick(self, event):
 		new_event = ShowNoteEvent(self.mgr.GetNote(self.id))
-		handler = self
-		parent = handler.GetParent()
-		#wx.PostEvent(globalManager.GetCurrentContentViewer(), new_event)
 		wx.PostEvent(self.GetParent(), new_event)
 
 	def OnDelete(self, event):
@@ -288,12 +285,19 @@ class NotePanel(wx.Panel):
 	def ShowNote(self, note):
 		if not self.created:
 			self.Create(self.note_mgr)
-		# must close it first before SetCurrentNote
-		self.note_view_panel.CloseSaveContent()
 
-		self.note_mgr.SetCurrentNote(note.id)
-		self.note_info_panel.ShowNoteInfo(note)
-		self.note_view_panel.ShowContent(note)
+		cur_note = self.note_mgr.GetCurrentNote()
+		if cur_note and note.id == cur_note.id:
+			# current note is already opened
+			self.note_view_panel.SaveContent()
+			self.note_info_panel.ShowNoteInfo(note)
+		else:
+			# must close it first before SetCurrentNote
+			self.note_view_panel.CloseSaveContent()
+
+			self.note_mgr.SetCurrentNote(note.id)
+			self.note_info_panel.ShowNoteInfo(note)
+			self.note_view_panel.ShowContent(note)
 		self.Layout()
 
 	def CloseNote(self, destroy):
@@ -384,6 +388,10 @@ class NoteViewPanel(wx.stc.StyledTextCtrl):
 			wx.LogInfo("content modified, saving it")
 			self.SaveFile(self.note.abspath)
 			self.SetModified(False)
+			self.note_mgr.RefreshOne(self.note.id)
+			wx.PostEvent(self.GetParent(), UpdateNoteEvent(self.note))
+			return True
+		return False
 
 	def ShowContent(self, note):
 		self.note = note
@@ -410,6 +418,7 @@ class NoteViewPanel(wx.stc.StyledTextCtrl):
 				self.fd.seek(0)
 				self.fd.write(self.GetText().encode(self.encoding))
 				self.fd.truncate()
+				self.fd.flush()
 			except IOError:
 				pass
 
