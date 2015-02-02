@@ -280,7 +280,7 @@ class NoteManagerByNotebook(NoteManager):
 		super(NoteManagerByNotebook, self).__init__(name)
 
 	def GetNotesCommand(self):
-		value, retval = self.run_core_command('list note -d -n "', self.container, '"')
+		value, retval = self.run_core_command('list note -d -b "', self.container, '"')
 		return value
 
 	def GetOneNoteCommand(self, note_path):
@@ -298,7 +298,7 @@ class NoteManagerByNotebook(NoteManager):
 		abs_path, rel_path = self.BuildPath(path)
 		fd = open(abs_path, "w")
 		fd.close()
-		value, retval = self.run_core_command('add note -n "', self.container, '" "', rel_path, '"')
+		value, retval = self.run_core_command('add note -b "', self.container, '" "', rel_path, '"')
 		result = self.GetOneNoteCommand(rel_path)
 		try:
 			note = self.ParseNoteInfo(result).next()
